@@ -3,6 +3,8 @@ package explorer.scheduler;
 import explorer.net.MessageSender;
 import explorer.PaxosEvent;
 import explorer.verifier.CassVerifier;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -12,6 +14,9 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.LinkedBlockingDeque;
 
 public abstract class Scheduler {
+  private static Logger log = LoggerFactory.getLogger(Scheduler.class);
+  protected boolean IS_NOP = false; // Reset queries are run in NOP mode, without any faults injected
+
   protected ConcurrentHashMap<Integer, MessageSender> messageSenders = new ConcurrentHashMap<Integer, MessageSender>(); //connectionId to sender
   protected ConcurrentHashMap<PaxosEvent, Integer> events = new ConcurrentHashMap<PaxosEvent, Integer>(); // event to message sender map
 
@@ -24,6 +29,7 @@ public abstract class Scheduler {
   // maps the onflight messages to its message senders
   private ConcurrentHashMap<PaxosEvent, Integer> onFlightMsgSenders = new ConcurrentHashMap<PaxosEvent, Integer>();
 
+  private boolean isNumEventsBounded = false; //todo configure
 
   public final synchronized void onConnect(int connectionId, MessageSender sender) {
     messageSenders.put(connectionId, sender);
@@ -41,22 +47,19 @@ public abstract class Scheduler {
   }
 
   public synchronized final void addAckEvent(int senderId, PaxosEvent message) {
-    System.out.println("Inside addAckEvent: senderId: " + senderId + " verb: " +  message.getVerb());
+    //System.out.println("Inside addAckEvent: senderId: " + senderId + " verb: " +  message.getVerb());
     // the connection says its finished with the previous event, send next to the connection its next event
     // receiver "connectionId" completed processing its current message
     PaxosEvent e = onFlightToReceiver.get(senderId).remove();
 
     if(!e.getVerb().equals(message.getVerb()))
-      System.out.println("ERROR: " + " expecting verb: " + message.getVerb()) ;
+      log.error("ERROR: " + " expecting verb: " + message.getVerb()) ;
     // if the receiver has more messages, send them
     if(!onFlightToReceiver.get(senderId).isEmpty()) {
       PaxosEvent next = onFlightToReceiver.get(senderId).peek();
       int senderConId = onFlightMsgSenders.get(next);
       doSendToReceiverNode(next, senderConId);
     }
-
-    if(isExecutionCompleted()) onExecutionCompleted();
-    //else checkForSchedule();
   }
 
   protected abstract void checkForSchedule();
@@ -67,7 +70,7 @@ public abstract class Scheduler {
       connectionId = events.remove(message);
       scheduled.add(message);
       sendToReceiverNode(message, connectionId);
-      Thread.sleep(10); // allow the previous message to execute - todo sync this!
+      Thread.sleep(10);
     } catch (InterruptedException e) {
       e.printStackTrace();
     }
@@ -82,7 +85,7 @@ public abstract class Scheduler {
   }
 
   private synchronized void doSendToReceiverNode(PaxosEvent message, int connectionId) {
-    System.out.println("=== Scheduling:  " + message);
+    //log.info("=== Scheduling:  " + message);
     String jsonStr = PaxosEvent.toJsonStr(message);
     MessageSender ms = messageSenders.get(connectionId);
     ms.send(jsonStr);
@@ -92,11 +95,12 @@ public abstract class Scheduler {
     return new ArrayList<>(scheduled);
   }
 
-  public boolean isScheduleCompleted() {
-    return scheduled.size() == 54;
-  }
+  public abstract boolean isScheduleCompleted();
 
   public boolean isExecutionCompleted() {
+   if(isNumEventsBounded)
+     return isScheduleCompleted();
+
     if (!isScheduleCompleted()) return false;
 
     for(Queue<PaxosEvent> queue: onFlightToReceiver.values()) {
@@ -105,13 +109,22 @@ public abstract class Scheduler {
     return true;
   }
 
-  protected void onExecutionCompleted() {
+  public void onExecutionCompleted() {
     System.out.println("Schedule: ");
     for(PaxosEvent e: scheduled) {
       //System.out.println(e);
-      System.out.println(ReplayingScheduler.getEventId(e) + " " + e.getPayload());
+      System.out.println(PaxosEvent.getEventId(e) + " " + e.getPayload());
     }
-    scheduled.clear();
+    //scheduled.clear();
     new CassVerifier().verify();
+  }
+
+  public void reset() {
+    events.clear();
+    scheduled.clear();
+  }
+
+  public void setISNOP(boolean v) {
+    IS_NOP = v;
   }
 }

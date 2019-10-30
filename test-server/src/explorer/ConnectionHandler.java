@@ -30,14 +30,18 @@ public class ConnectionHandler implements Handler {
 
   @Override
   public void onReceive(int id, String message) {
-    //System.out.println("Received from Node: " + id + " Message: " + message);
+    //System.out.println("==Received from Node: " + id + " Message: " + message );
 
     synchronized (scheduler) {
       PaxosEvent event = PaxosEvent.toObject(message);
+
       if(event.isAckEvent())
         scheduler.addAckEvent((int)event.getSender(), event); // the sender of the ack, event
-      else
+      else  {
+        System.out.println("==Received from Node: " + id + " Message: " + message );
         scheduler.addNewEvent(id, event);
+      }
+
     }
   }
 }

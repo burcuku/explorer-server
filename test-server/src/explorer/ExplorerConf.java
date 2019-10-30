@@ -17,16 +17,25 @@ public class ExplorerConf {
 
   private static ExplorerConf INSTANCE;
 
+  private int randomSeed;
+
   public final int portNumber;
   public final int numberOfClients;
 
   public final String schedulerClass;
   public final String schedulerFile;
+  public final boolean schedulerFileHasMsgContent;
 
   public final String targetDirectory;
   public final String initialDataDirectory;
   public final String runDirectory;
   public final String javaPath;
+
+  // Workload configuration parameters
+  public final int clusterPort;
+  public final int poolTimeoutMillis;
+  public final int readTimeoutMillis;
+  public final int timeBetweenQueriesMillis;
 
   private ExplorerConf(String configFile, String[] args) {
     Properties prop = loadProperties(configFile);
@@ -41,10 +50,23 @@ public class ExplorerConf {
     schedulerClass = prop.getProperty("scheduler");
     schedulerFile = prop.getProperty("scheduleFile");
 
+    schedulerFileHasMsgContent = Boolean.parseBoolean(prop.getProperty("scheduleHasMsgContent"));
+
     targetDirectory = overrideArgs.getOrDefault("targetDirectory", prop.getProperty("targetDirectory"));
     initialDataDirectory = overrideArgs.getOrDefault("initialDataDirectory", prop.getProperty("initialDataDirectory"));
     runDirectory = overrideArgs.getOrDefault("runDirectory", prop.getProperty("runDirectory"));
     javaPath = overrideArgs.getOrDefault("javaPath", prop.getProperty("javaPath"));
+
+    log.info("Using scheduler: " + schedulerClass);
+    if(schedulerClass.equals("explorer.scheduler.ReplayingScheduler"))
+      log.info("using file " + schedulerFile);
+
+
+    // Read cluster parameters
+    clusterPort = Integer.parseInt(prop.getProperty("clusterPort"));
+    poolTimeoutMillis = Integer.parseInt(prop.getProperty("poolTimeoutMillis"));
+    readTimeoutMillis = Integer.parseInt(prop.getProperty("readTimeoutMillis"));
+    timeBetweenQueriesMillis = Integer.parseInt(prop.getProperty("timeBetweenQueriesMillis"));
   }
 
   public WorkloadDirs getWorkloadDirs() throws IOException {
@@ -71,5 +93,13 @@ public class ExplorerConf {
       throw new IllegalStateException("Configuration not initialized");
     }
     return INSTANCE;
+  }
+
+  public void setSeed(int seed) {
+    randomSeed = seed;
+  }
+
+  public int getSeed() {
+    return randomSeed;
   }
 }

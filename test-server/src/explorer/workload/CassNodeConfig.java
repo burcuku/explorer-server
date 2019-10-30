@@ -59,7 +59,8 @@ class CassNodeConfig {
     Files.createDirectories(dirs.nodeHome(nodeId, "saved_caches"));
     Files.createDirectories(dirs.nodeHome(nodeId, "log"));
 
-    Files.copy(dirs.initData("ballot"), dirs.getRunDirectory().resolve("ballot"), StandardCopyOption.REPLACE_EXISTING);
+    prepareBallotFile();
+
     Files.copy(
         dirs.initData("cass_log.properties"),
         dirs.nodeHome(nodeId, "config", "cass_log.properties"),
@@ -69,6 +70,14 @@ class CassNodeConfig {
     FileUtils.copyDirectoryToDirectory(dirs.initData("nodes", "node_" + nodeId, "commit_logs").toFile(), dirs.nodeHome(nodeId).toFile());
     FileUtils.copyDirectoryToDirectory(dirs.initData("nodes", "node_" + nodeId, "data").toFile(), dirs.nodeHome(nodeId).toFile());
     Files.write(dirs.nodeHome(nodeId, "data", "myid"), String.valueOf(nodeId).getBytes(), StandardOpenOption.CREATE);
+  }
+
+  void prepareBallotFile() {
+    try {
+      Files.copy(dirs.initData("ballot"), dirs.getRunDirectory().resolve("ballot"), StandardCopyOption.REPLACE_EXISTING);
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
   }
 
   String seeds(int nodeId) {

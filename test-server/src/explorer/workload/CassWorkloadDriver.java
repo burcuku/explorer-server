@@ -57,6 +57,17 @@ public class CassWorkloadDriver implements WorkloadDriver {
   }
 
   @Override
+  public void sendResetWorkload() {
+    CassWorkload.reset6023();
+  }
+
+  @Override
+  public void prepareNextTest() {
+    CassNodeConfig template = new CassNodeConfig(dirs);
+    template.prepareBallotFile();
+  }
+
+  @Override
   public void stopEnsemble() {
     nodeProcesses.forEach((id, process) -> {
       log.info("Stopping process {}...", id);
@@ -84,6 +95,11 @@ public class CassWorkloadDriver implements WorkloadDriver {
     List<String> command = new ArrayList<>();
     //command.add("/home/paper387/.jenv/shims/java");
     command.add(javaPath);
+    /*
+    if (nodeId == 2) {
+      command.add("-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005");
+    }
+     */
     command.addAll(nodeArguments(nodeId));
     command.add("org.apache.cassandra.service.CassandraDaemon");
 

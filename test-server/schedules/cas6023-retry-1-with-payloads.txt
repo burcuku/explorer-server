@@ -1,0 +1,133 @@
+// This file contains the schedule of events which exposes CASS-6023 bug with retrying the third request.
+// The schedule runs Cassandra Paxos for three client transactions Req-0, Req-1 and Req-2.
+
+// The events are grouped by the rounds, together with the comments for the delayed events.
+// (The text after the escape lines "//" are ignored by the scheduler.)
+
+// The messages written after "// @D" are dropped by the scheduler server (not collected in the onflight messages)
+
+// Round 1
+Req-0--PAXOS_PREPARE--From-0--To-0 {ballot=33d9f0f0-08c5-11e7-845e-, key=1916154799}
+Req-0--PAXOS_PREPARE--From-0--To-1 {ballot=33d9f0f0-08c5-11e7-845e-, key=1916154799}
+Req-0--PAXOS_PREPARE--From-0--To-2 {ballot=33d9f0f0-08c5-11e7-845e-, key=1916154799}
+
+// Round 2
+Req-0--PAXOS_PREPARE_RESPONSE--From-0--To-0 {mostRecentCommitKey=1916154799, inProgressCommitKey=1916154799, response=true, inProgressCommitBallot=13814000-1dd2-11b2-8080-, mostRecentCommitBallot=13814000-1dd2-11b2-8080-}
+Req-0--PAXOS_PREPARE_RESPONSE--From-1--To-0 {mostRecentCommitKey=1916154799, inProgressCommitKey=1916154799, response=true, inProgressCommitBallot=13814000-1dd2-11b2-8080-, mostRecentCommitBallot=13814000-1dd2-11b2-8080-}
+Req-0--PAXOS_PREPARE_RESPONSE--From-2--To-0 {mostRecentCommitKey=1916154799, inProgressCommitKey=1916154799, response=true, inProgressCommitBallot=13814000-1dd2-11b2-8080-, mostRecentCommitBallot=13814000-1dd2-11b2-8080-}
+
+// Round 3
+Req-0--PAXOS_PROPOSE--From-0--To-0 {ballot=33d9f0f0-08c5-11e7-845e-, key=1916154799}
+Req-0--PAXOS_PROPOSE--From-0--To-1 {ballot=33d9f0f0-08c5-11e7-845e-, key=1916154799}
+Req-0--PAXOS_PROPOSE--From-0--To-2 {ballot=33d9f0f0-08c5-11e7-845e-, key=1916154799}
+
+// Round 4
+Req-0--PAXOS_PROPOSE_RESPONSE--From-0--To-0 {response=true}
+Req-0--PAXOS_PROPOSE_RESPONSE--From-1--To-0 {response=true}
+Req-0--PAXOS_PROPOSE_RESPONSE--From-2--To-0 {response=true}
+
+// Round 5
+Req-0--PAXOS_COMMIT--From-0--To-0 {ballot=33d9f0f0-08c5-11e7-845e-, key=1916154799}
+Req-0--PAXOS_COMMIT--From-0--To-1 {ballot=33d9f0f0-08c5-11e7-845e-, key=1916154799}
+// @D Req-0--PAXOS_COMMIT--From-0--To-2 {ballot=33d9f0f0-08c5-11e7-845e-, key=1916154799}
+
+// Round 6
+Req-0--PAXOS_COMMIT_RESPONSE--From-0--To-0 {}
+Req-0--PAXOS_COMMIT_RESPONSE--From-1--To-0 {}
+
+// Round 7
+Req-1--PAXOS_PREPARE--From-1--To-0 {ballot=33da1800-08c5-11e7-845e-, key=1916154799}
+Req-1--PAXOS_PREPARE--From-1--To-1 {ballot=33da1800-08c5-11e7-845e-, key=1916154799}
+Req-1--PAXOS_PREPARE--From-1--To-2 {ballot=33da1800-08c5-11e7-845e-, key=1916154799}
+
+// Round 8
+Req-1--PAXOS_PREPARE_RESPONSE--From-0--To-1 {mostRecentCommitKey=1916154799, inProgressCommitKey=1916154799, response=true, inProgressCommitBallot=33d9f0f0-08c5-11e7-845e-, mostRecentCommitBallot=33d9f0f0-08c5-11e7-845e-}
+Req-1--PAXOS_PREPARE_RESPONSE--From-1--To-1 {mostRecentCommitKey=1916154799, inProgressCommitKey=1916154799, response=true, inProgressCommitBallot=33d9f0f0-08c5-11e7-845e-, mostRecentCommitBallot=33d9f0f0-08c5-11e7-845e-}
+Req-1--PAXOS_PREPARE_RESPONSE--From-2--To-1 {mostRecentCommitKey=1916154799, inProgressCommitKey=1916154799, response=true, inProgressCommitBallot=33d9f0f0-08c5-11e7-845e-, mostRecentCommitBallot=13814000-1dd2-11b2-8080-}
+
+
+// Round 9
+Req-1--PAXOS_PROPOSE--From-1--To-0 {ballot=33da1800-08c5-11e7-845e-, key=1916154799}
+Req-1--PAXOS_PROPOSE--From-1--To-1 {ballot=33da1800-08c5-11e7-845e-, key=1916154799}
+// @D Req-1--PAXOS_PROPOSE--From-1--To-2 {ballot=33da1800-08c5-11e7-845e-, key=1916154799}
+
+// Round 10
+Req-1--PAXOS_PROPOSE_RESPONSE--From-0--To-1 {response=true}
+Req-1--PAXOS_PROPOSE_RESPONSE--From-1--To-1 {response=true}
+
+//Round 11
+Req-1--PAXOS_COMMIT--From-1--To-1 {ballot=33da1800-08c5-11e7-845e-, key=1916154799}
+// @D Req-1--PAXOS_COMMIT--From-1--To-0 {ballot=33da1800-08c5-11e7-845e-, key=1916154799}
+// @D Req-1--PAXOS_COMMIT--From-1--To-2 {ballot=33da1800-08c5-11e7-845e-, key=1916154799}
+
+// Round 12
+Req-1--PAXOS_COMMIT_RESPONSE--From-1--To-1 {}
+
+// Round 13-1
+Req-2--PAXOS_PREPARE--From-2--To-2 {ballot=33da3f10-08c5-11e7-845e-, key=1916154799}
+// @D Req-2--PAXOS_PREPARE--From-2--To-0 {ballot=33da3f10-08c5-11e7-845e-, key=1916154799}
+// @D Req-2--PAXOS_PREPARE--From-2--To-1 {ballot=33da3f10-08c5-11e7-845e-, key=1916154799}
+
+// Round 14-1 dropped responses
+Req-2--PAXOS_PREPARE_RESPONSE--From-2--To-2 {mostRecentCommitKey=1916154799, inProgressCommitKey=1916154799, response=true, inProgressCommitBallot=33da1800-08c5-11e7-845e-, mostRecentCommitBallot=13814000-1dd2-11b2-8080-}
+
+// Round 13-2
+Req-2--PAXOS_PREPARE--From-2--To-2 {ballot=33da6620-08c5-11e7-845e-, key=1916154799}
+Req-2--PAXOS_PREPARE--From-2--To-1 {ballot=33da6620-08c5-11e7-845e-, key=1916154799}
+Req-2--PAXOS_PREPARE--From-2--To-0 {ballot=33da6620-08c5-11e7-845e-, key=1916154799}
+
+// Round 14-2 // the order of 2--To-2 and 1--To-2 are not important, having dropped 0--2 OR scheduling 0--2 the last
+Req-2--PAXOS_PREPARE_RESPONSE--From-1--To-2 {mostRecentCommitKey=1916154799, inProgressCommitKey=1916154799, response=true, inProgressCommitBallot=33da1800-08c5-11e7-845e-, mostRecentCommitBallot=33da1800-08c5-11e7-845e-}
+Req-2--PAXOS_PREPARE_RESPONSE--From-2--To-2 {mostRecentCommitKey=1916154799, inProgressCommitKey=1916154799, response=true, inProgressCommitBallot=33da3f10-08c5-11e7-845e-, mostRecentCommitBallot=13814000-1dd2-11b2-8080-}
+Req-2--PAXOS_PREPARE_RESPONSE--From-0--To-2 {mostRecentCommitKey=1916154799, inProgressCommitKey=1916154799, response=true, inProgressCommitBallot=33da1800-08c5-11e7-845e-, mostRecentCommitBallot=33d9f0f0-08c5-11e7-845e-}
+
+//Round 15:
+Req-2--PAXOS_PROPOSE--From-2--To-0 {ballot=33da6620-08c5-11e7-845e-, key=1916154799}
+Req-2--PAXOS_PROPOSE--From-2--To-1 {ballot=33da6620-08c5-11e7-845e-, key=1916154799}
+Req-2--PAXOS_PROPOSE--From-2--To-2 {ballot=33da6620-08c5-11e7-845e-, key=1916154799}
+
+//Round 16:
+Req-2--PAXOS_PROPOSE_RESPONSE--From-0--To-2 {response=true}
+Req-2--PAXOS_PROPOSE_RESPONSE--From-1--To-2 {response=true}
+Req-2--PAXOS_PROPOSE_RESPONSE--From-2--To-2 {response=true}
+
+//Round 17:
+Req-2--PAXOS_COMMIT--From-2--To-0 {ballot=33da6620-08c5-11e7-845e-, key=1916154799}
+Req-2--PAXOS_COMMIT--From-2--To-1 {ballot=33da6620-08c5-11e7-845e-, key=1916154799}
+Req-2--PAXOS_COMMIT--From-2--To-2 {ballot=33da6620-08c5-11e7-845e-, key=1916154799}
+
+//Round 18:
+Req-2--PAXOS_COMMIT_RESPONSE--From-0--To-2 {}
+Req-2--PAXOS_COMMIT_RESPONSE--From-2--To-2 {}
+Req-2--PAXOS_COMMIT_RESPONSE--From-1--To-2 {}
+
+// That would be the rest:
+//Round 19:
+Req-2--PAXOS_PREPARE--From-2--To-2 {ballot=33da8d30-08c5-11e7-845e-, key=1916154799}
+Req-2--PAXOS_PREPARE--From-2--To-1 {ballot=33da8d30-08c5-11e7-845e-, key=1916154799}
+Req-2--PAXOS_PREPARE--From-2--To-0 {ballot=33da8d30-08c5-11e7-845e-, key=1916154799}
+
+//Round 20:
+Req-2--PAXOS_PREPARE_RESPONSE--From-0--To-2 {mostRecentCommitKey=1916154799, inProgressCommitKey=1916154799, response=true, inProgressCommitBallot=33da6620-08c5-11e7-845e-, mostRecentCommitBallot=33da6620-08c5-11e7-845e-}
+Req-2--PAXOS_PREPARE_RESPONSE--From-1--To-2 {mostRecentCommitKey=1916154799, inProgressCommitKey=1916154799, response=true, inProgressCommitBallot=33da6620-08c5-11e7-845e-, mostRecentCommitBallot=33da6620-08c5-11e7-845e-}
+Req-2--PAXOS_PREPARE_RESPONSE--From-2--To-2 {mostRecentCommitKey=1916154799, inProgressCommitKey=1916154799, response=true, inProgressCommitBallot=33da6620-08c5-11e7-845e-, mostRecentCommitBallot=33da6620-08c5-11e7-845e-}
+
+//Round 21:
+Req-2--PAXOS_PROPOSE--From-2--To-0 {ballot=33da8d30-08c5-11e7-845e-, key=1916154799}
+Req-2--PAXOS_PROPOSE--From-2--To-1 {ballot=33da8d30-08c5-11e7-845e-, key=1916154799}
+Req-2--PAXOS_PROPOSE--From-2--To-2 {ballot=33da8d30-08c5-11e7-845e-, key=1916154799}
+
+//Round 22:
+Req-2--PAXOS_PROPOSE_RESPONSE--From-0--To-2 {response=true}
+Req-2--PAXOS_PROPOSE_RESPONSE--From-1--To-2 {response=true}
+Req-2--PAXOS_PROPOSE_RESPONSE--From-2--To-2 {response=true}
+
+//Round 23:
+Req-2--PAXOS_COMMIT--From-2--To-0 {ballot=33da8d30-08c5-11e7-845e-, key=1916154799}
+Req-2--PAXOS_COMMIT--From-2--To-1 {ballot=33da8d30-08c5-11e7-845e-, key=1916154799}
+Req-2--PAXOS_COMMIT--From-2--To-2 {ballot=33da8d30-08c5-11e7-845e-, key=1916154799}
+
+//Round 24:
+Req-2--PAXOS_COMMIT_RESPONSE--From-0--To-2 {}
+Req-2--PAXOS_COMMIT_RESPONSE--From-2--To-2 {}
+Req-2--PAXOS_COMMIT_RESPONSE--From-1--To-2 {}

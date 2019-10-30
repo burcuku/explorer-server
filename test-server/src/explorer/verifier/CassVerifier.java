@@ -1,8 +1,15 @@
 package explorer.verifier;
 
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.net.InetSocketAddress;
+import java.util.Collections;
 import java.util.Map;
 import java.util.HashMap;
 import com.datastax.driver.core.*;
+import com.datastax.driver.core.policies.RoundRobinPolicy;
+import com.datastax.driver.core.policies.WhiteListPolicy;
 import org.apache.log4j.BasicConfigurator;
 
 public class CassVerifier  {
@@ -14,7 +21,8 @@ public class CassVerifier  {
   private String value_2;
 
   public boolean verify() {
-    BasicConfigurator.configure();
+    // causes redundant logging when configured multiple times!
+    //BasicConfigurator.configure();
 
     boolean result = true;
     if (!checkDataConsistency()) {
@@ -26,6 +34,17 @@ public class CassVerifier  {
   private boolean checkDataConsistency() {
 	  getValues();
 
+    FileWriter fw;
+    PrintWriter pw = null;
+
+    try {
+      fw = new FileWriter("result.txt", true);
+      pw = new PrintWriter(fw);
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
+
+
     try {
       value_1 = map.get("value_1");
       value_2 = map.get("value_2");
@@ -33,6 +52,10 @@ public class CassVerifier  {
       System.out.println("Value1: " + value_1 + "    Value2: " + value_2);
       if (value_1.equals("A") && (value_2.equals("B"))) {
         System.out.println("Reproduced the bug.");
+        if(pw != null) {
+          pw.println("Reproduced the bug.");
+          pw.close();
+        }
         return false;
       }
     } catch (Exception e) {
@@ -41,6 +64,11 @@ public class CassVerifier  {
       return true;
     }
     System.out.println("No bug.");
+    if(pw != null) {
+      pw.println("Reproduced the bug.");
+      pw.close();
+    }
+
     return true;
   }
 
@@ -61,8 +89,10 @@ public class CassVerifier  {
 		} catch (Exception e) {
 			System.out.println("ERROR in reading row.");
 			System.out.println(e.getMessage());
-		}
-		cluster.close();
+		} finally {
+		  session.close();
+		  cluster.close();
+    }
   }
 
 }

@@ -41,6 +41,13 @@ public class PaxosEvent {
     return usrval;
   }
 
+  public String getBallot() {
+    if(payload.contains("ballot=")) {
+      return payload.substring(payload.indexOf("ballot=")+7, payload.indexOf("ballot=")+31);
+    }
+    return "";
+  }
+
   public int getProtocolStep() {
       if(verb.equals("PAXOS_PREPARE")) {
         return 0;
@@ -65,10 +72,6 @@ public class PaxosEvent {
       return (int)recv;
     }
     return -1;
-  }
-
-  public int getRoundNumber() {
-    return getProtocolStep() + getClientRequest() * NUM_PAXOS_ROUNDS; // client requests start with 0
   }
 
   public boolean isRequest() {
@@ -110,6 +113,19 @@ public class PaxosEvent {
   public String toString() {
       return "Req: " + getClientRequest() +
           " From: " + sender + " To: " + recv + " - " + verb;
+  }
+
+  //todo put into PaxosEvent
+  public static String getEventId(PaxosEvent message) {
+    StringBuilder sb = new StringBuilder("Req-");
+    sb.append(message.getClientRequest());
+    sb.append("--");
+    sb.append(message.getVerb());
+    sb.append("--From-");
+    sb.append(message.getSender());
+    sb.append("--To-");
+    sb.append(message.getRecv());
+    return sb.toString();
   }
 
   @Override

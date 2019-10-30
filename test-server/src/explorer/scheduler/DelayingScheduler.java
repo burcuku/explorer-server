@@ -1,23 +1,25 @@
 package explorer.scheduler;
 
+import explorer.ExplorerConf;
 import explorer.PaxosEvent;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
+/**
+ * NOTE:  THIS SCHEDULER IS OBSOLETE AND IS NOT MAINTAINED
+ * The DelayingScheduler delays the execution of some messages to a future round
+ */
 public class DelayingScheduler extends Scheduler {
-    //todo parametrize numPhases, numNodes per phase
-
-    //todo scheduler conf
-    private int NUM_ROUNDS = 18;
-    private int NUM_MESSAGES_PER_ROUND = 3;
+    private final int NUM_ROUNDS;
+    private final int NUM_MESSAGES_PER_ROUND;
 
     private ConcurrentHashMap<PaxosEvent, Integer> toDelay = new ConcurrentHashMap<>(); //message, newRoundNo
     private ConcurrentHashMap<PaxosEvent, Integer> delayed = new ConcurrentHashMap<>(); //message, newRoundNo
 
-    private int[] numRegMessagesPerRound = new int[NUM_ROUNDS];
-    private int[] numIrregMessagesPerRound = new int[NUM_ROUNDS];
+    private int[] numRegMessagesPerRound;
+    private int[] numIrregMessagesPerRound;
 
     private AtomicInteger currentRound = new AtomicInteger(0);
     private AtomicInteger numRegProcessedInCurrentRound = new AtomicInteger(0);
@@ -27,13 +29,26 @@ public class DelayingScheduler extends Scheduler {
     private List<PaxosEvent> responsesToDelay = new ArrayList<PaxosEvent>(); //keeps the request messages whose messages will be delayed
 
     // d values - number of messages to delay from each round
-    private int[] d = new int[NUM_ROUNDS];
+    private int[] d;
 
-    Random[] random = new Random[NUM_MESSAGES_PER_ROUND ];
+    Random[] random;
 
+    //todo configure
     private boolean GUIDE_FOR_BUG = true;
 
-    public DelayingScheduler() {
+    public DelayingScheduler(ExplorerConf conf) {
+        this(18, 3);
+    }
+
+    public DelayingScheduler(int numRounds, int numProcesses) {
+        NUM_ROUNDS = numRounds;
+        NUM_MESSAGES_PER_ROUND = numProcesses;
+
+        numRegMessagesPerRound = new int[NUM_ROUNDS];
+        numIrregMessagesPerRound = new int[NUM_ROUNDS];
+        d = new int[NUM_ROUNDS];
+        random = new Random[NUM_MESSAGES_PER_ROUND ];
+
         Arrays.fill(numRegMessagesPerRound, NUM_MESSAGES_PER_ROUND);
         Arrays.fill(numIrregMessagesPerRound, 0);
 
@@ -69,12 +84,12 @@ public class DelayingScheduler extends Scheduler {
         super.addNewEvent(connectionId, message);
 
         // check if it will be delayed:
-        if(idsOfDelayedMsgs.get(message.getRoundNumber()).contains(getInternalIdInRound(message))) {
+        if(idsOfDelayedMsgs.get(getRoundNumber(message)).contains(getInternalIdInRound(message))) {
             toDelay.put(message, -1);
-            numRegMessagesPerRound[message.getRoundNumber()] --;
+            numRegMessagesPerRound[getRoundNumber(message)] --;
             //System.err.println("Delayed: " + message + " numMessagesPerRound " + numMessagesPerRound[message.getRoundNumber()]);
             if(message.isRequest()) { // the response is delayed to the same round
-                numRegMessagesPerRound[message.getRoundNumber() + 1] --;
+                numRegMessagesPerRound[getRoundNumber(message) + 1] --;
                 responsesToDelay.add(message);
             }
             checkUpdateRound();
@@ -148,11 +163,15 @@ public class DelayingScheduler extends Scheduler {
         }
 
         // not-delayed and its turn
-        if(message.getRoundNumber() == currentRound.get() && !toDelay.containsKey(message)) {
+        if(getRoundNumber(message) == currentRound.get() && !toDelay.containsKey(message)) {
            numRegProcessedInCurrentRound.incrementAndGet();
             return true;
         }
         return false;
+    }
+
+    public int getRoundNumber(PaxosEvent message) {
+        return message.getProtocolStep() + message.getClientRequest() * NUM_ROUNDS; // client requests start with 0
     }
 
     private void printEvents() {
@@ -163,12 +182,17 @@ public class DelayingScheduler extends Scheduler {
         }
         System.out.println("toDelay: ");
         for(PaxosEvent e: toDelay.keySet()) {
-            System.out.println(e + " R: " + toDelay.get(e) + " Its orig round was: " + e.getRoundNumber());
+            System.out.println(e + " R: " + toDelay.get(e) + " Its orig round was: " + getRoundNumber(e));
         }
     }
 
     public List<PaxosEvent> getSchedule() {
         return new ArrayList<PaxosEvent>(scheduled);
+    }
+
+    @Override
+    public boolean isScheduleCompleted() {
+        return false;
     }
 
 }

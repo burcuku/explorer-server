@@ -1,0 +1,71 @@
+Req-0--PAXOS_PREPARE--From-0--To-0 {ballot=33d9f0f0-08c5-11e7-845e-, key=1916154799}
+Req-0--PAXOS_PREPARE--From-0--To-1 {ballot=33d9f0f0-08c5-11e7-845e-, key=1916154799}
+Req-0--PAXOS_PREPARE--From-0--To-2 {ballot=33d9f0f0-08c5-11e7-845e-, key=1916154799}
+
+Req-0--PAXOS_PREPARE_RESPONSE--From-0--To-0 {mostRecentCommitKey=1916154799, inProgressCommitKey=1916154799, response=true, inProgressCommitBallot=13814000-1dd2-11b2-8080-, mostRecentCommitBallot=13814000-1dd2-11b2-8080-}
+Req-0--PAXOS_PREPARE_RESPONSE--From-1--To-0 {mostRecentCommitKey=1916154799, inProgressCommitKey=1916154799, response=true, inProgressCommitBallot=13814000-1dd2-11b2-8080-, mostRecentCommitBallot=13814000-1dd2-11b2-8080-}
+Req-0--PAXOS_PREPARE_RESPONSE--From-2--To-0 {mostRecentCommitKey=1916154799, inProgressCommitKey=1916154799, response=true, inProgressCommitBallot=13814000-1dd2-11b2-8080-, mostRecentCommitBallot=13814000-1dd2-11b2-8080-}
+
+Req-0--PAXOS_PROPOSE--From-0--To-0 {ballot=33d9f0f0-08c5-11e7-845e-, key=1916154799}
+Req-0--PAXOS_PROPOSE--From-0--To-1 {ballot=33d9f0f0-08c5-11e7-845e-, key=1916154799}
+Req-0--PAXOS_PROPOSE--From-0--To-2 {ballot=33d9f0f0-08c5-11e7-845e-, key=1916154799}
+
+Req-0--PAXOS_PROPOSE_RESPONSE--From-0--To-0 {response=true}
+Req-0--PAXOS_PROPOSE_RESPONSE--From-1--To-0 {response=true}
+Req-0--PAXOS_PROPOSE_RESPONSE--From-2--To-0 {response=true}
+
+Req-0--PAXOS_COMMIT--From-0--To-0 {ballot=33d9f0f0-08c5-11e7-845e-, key=1916154799}
+Req-0--PAXOS_COMMIT--From-0--To-1 {ballot=33d9f0f0-08c5-11e7-845e-, key=1916154799}
+Req-0--PAXOS_COMMIT--From-0--To-2 {ballot=33d9f0f0-08c5-11e7-845e-, key=1916154799}
+
+Req-0--PAXOS_COMMIT_RESPONSE--From-0--To-0 {}
+Req-0--PAXOS_COMMIT_RESPONSE--From-1--To-0 {}
+Req-0--PAXOS_COMMIT_RESPONSE--From-2--To-0 {}
+
+Req-1--PAXOS_PREPARE--From-1--To-0 {ballot=33da1800-08c5-11e7-845e-, key=1916154799}
+Req-1--PAXOS_PREPARE--From-1--To-1 {ballot=33da1800-08c5-11e7-845e-, key=1916154799}
+Req-1--PAXOS_PREPARE--From-1--To-2 {ballot=33da1800-08c5-11e7-845e-, key=1916154799}
+
+Req-1--PAXOS_PREPARE_RESPONSE--From-0--To-1 {mostRecentCommitKey=1916154799, inProgressCommitKey=1916154799, response=true, inProgressCommitBallot=33d9f0f0-08c5-11e7-845e-, mostRecentCommitBallot=33d9f0f0-08c5-11e7-845e-}
+Req-1--PAXOS_PREPARE_RESPONSE--From-1--To-1 {mostRecentCommitKey=1916154799, inProgressCommitKey=1916154799, response=true, inProgressCommitBallot=33d9f0f0-08c5-11e7-845e-, mostRecentCommitBallot=33d9f0f0-08c5-11e7-845e-}
+Req-1--PAXOS_PREPARE_RESPONSE--From-2--To-1 {mostRecentCommitKey=1916154799, inProgressCommitKey=1916154799, response=true, inProgressCommitBallot=33d9f0f0-08c5-11e7-845e-, mostRecentCommitBallot=33d9f0f0-08c5-11e7-845e-}
+
+Req-1--PAXOS_PROPOSE--From-1--To-0 {ballot=33da1800-08c5-11e7-845e-, key=1916154799}
+Req-1--PAXOS_PROPOSE--From-1--To-1 {ballot=33da1800-08c5-11e7-845e-, key=1916154799}
+Req-1--PAXOS_PROPOSE--From-1--To-2 {ballot=33da1800-08c5-11e7-845e-, key=1916154799}
+
+Req-1--PAXOS_PROPOSE_RESPONSE--From-0--To-1 {response=true}
+Req-1--PAXOS_PROPOSE_RESPONSE--From-1--To-1 {response=true}
+Req-1--PAXOS_PROPOSE_RESPONSE--From-2--To-1 {response=true}
+
+Req-1--PAXOS_COMMIT--From-1--To-0 {ballot=33da1800-08c5-11e7-845e-, key=1916154799}
+Req-1--PAXOS_COMMIT--From-1--To-1 {ballot=33da1800-08c5-11e7-845e-, key=1916154799}
+Req-1--PAXOS_COMMIT--From-1--To-2 {ballot=33da1800-08c5-11e7-845e-, key=1916154799}
+
+Req-1--PAXOS_COMMIT_RESPONSE--From-0--To-1 {}
+Req-1--PAXOS_COMMIT_RESPONSE--From-1--To-1 {}
+Req-1--PAXOS_COMMIT_RESPONSE--From-2--To-1 {}
+
+Req-2--PAXOS_PREPARE--From-2--To-0 {ballot=33da3f10-08c5-11e7-845e-, key=1916154799}
+Req-2--PAXOS_PREPARE--From-2--To-1 {ballot=33da3f10-08c5-11e7-845e-, key=1916154799}
+Req-2--PAXOS_PREPARE--From-2--To-2 {ballot=33da3f10-08c5-11e7-845e-, key=1916154799}
+
+Req-2--PAXOS_PREPARE_RESPONSE--From-0--To-2 {mostRecentCommitKey=1916154799, inProgressCommitKey=1916154799, response=true, inProgressCommitBallot=33da1800-08c5-11e7-845e-, mostRecentCommitBallot=33da1800-08c5-11e7-845e-}
+Req-2--PAXOS_PREPARE_RESPONSE--From-1--To-2 {mostRecentCommitKey=1916154799, inProgressCommitKey=1916154799, response=true, inProgressCommitBallot=33da1800-08c5-11e7-845e-, mostRecentCommitBallot=33da1800-08c5-11e7-845e-}
+Req-2--PAXOS_PREPARE_RESPONSE--From-2--To-2 {mostRecentCommitKey=1916154799, inProgressCommitKey=1916154799, response=true, inProgressCommitBallot=33da1800-08c5-11e7-845e-, mostRecentCommitBallot=33da1800-08c5-11e7-845e-}
+
+Req-2--PAXOS_PROPOSE--From-2--To-0 {ballot=33da3f10-08c5-11e7-845e-, key=1916154799}
+Req-2--PAXOS_PROPOSE--From-2--To-1 {ballot=33da3f10-08c5-11e7-845e-, key=1916154799}
+Req-2--PAXOS_PROPOSE--From-2--To-2 {ballot=33da3f10-08c5-11e7-845e-, key=1916154799}
+
+Req-2--PAXOS_PROPOSE_RESPONSE--From-0--To-2 {response=true}
+Req-2--PAXOS_PROPOSE_RESPONSE--From-1--To-2 {response=true}
+Req-2--PAXOS_PROPOSE_RESPONSE--From-2--To-2 {response=true}
+
+Req-2--PAXOS_COMMIT--From-2--To-0 {ballot=33da3f10-08c5-11e7-845e-, key=1916154799}
+Req-2--PAXOS_COMMIT--From-2--To-1 {ballot=33da3f10-08c5-11e7-845e-, key=1916154799}
+Req-2--PAXOS_COMMIT--From-2--To-2 {ballot=33da3f10-08c5-11e7-845e-, key=1916154799}
+
+Req-2--PAXOS_COMMIT_RESPONSE--From-0--To-2 {}
+Req-2--PAXOS_COMMIT_RESPONSE--From-1--To-2 {}
+Req-2--PAXOS_COMMIT_RESPONSE--From-2--To-2 {}
