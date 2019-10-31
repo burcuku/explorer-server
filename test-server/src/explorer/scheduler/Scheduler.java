@@ -110,12 +110,12 @@ public abstract class Scheduler {
   }
 
   public void onExecutionCompleted() {
-    System.out.println("Schedule: ");
+    StringBuilder sb = new StringBuilder("Schedule: ");
     for(PaxosEvent e: scheduled) {
       //System.out.println(e);
-      System.out.println(PaxosEvent.getEventId(e) + " " + e.getPayload());
+      sb.append("\n").append(PaxosEvent.getEventId(e) + " " + e.getPayload());
     }
-    //scheduled.clear();
+    log.debug(sb.toString());
     new CassVerifier().verify();
   }
 

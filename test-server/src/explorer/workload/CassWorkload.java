@@ -112,7 +112,7 @@ class CassWorkload {
       if (nbRetry < errorAttempts) {
         return RetryDecision.retry(ConsistencyLevel.QUORUM);
       }
-      return RetryDecision.rethrow();
+      return RetryDecision.ignore();
     }
   }
 }

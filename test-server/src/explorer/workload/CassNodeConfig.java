@@ -72,7 +72,7 @@ class CassNodeConfig {
     Files.write(dirs.nodeHome(nodeId, "data", "myid"), String.valueOf(nodeId).getBytes(), StandardOpenOption.CREATE);
   }
 
-  void prepareBallotFile() {
+  public void prepareBallotFile() {
     try {
       Files.copy(dirs.initData("ballot"), dirs.getRunDirectory().resolve("ballot"), StandardCopyOption.REPLACE_EXISTING);
     } catch (IOException e) {

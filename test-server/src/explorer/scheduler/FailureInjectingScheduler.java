@@ -41,7 +41,9 @@ public class FailureInjectingScheduler extends Scheduler {
   enum ProtocolRound {PAXOS_PREPARE, PAXOS_PREPARE_RESPONSE, PAXOS_PROPOSE, PAXOS_PROPOSE_RESPONSE, PAXOS_COMMIT, PAXOS_COMMIT_RESPONSE};
   private List<ProtocolRound> rounds;
   // not needed by the standard algorithm, used for optimization (eliminating timeouts for collecting the messages in a round) for Cassandra
-  private List<String> ballots = Arrays.asList("33d9f0f0-08c5-11e7-845e-", "33da1800-08c5-11e7-845e-", "33da3f10-08c5-11e7-845e-", "33da6620-08c5-11e7-845e-", "33da8d30-08c5-11e7-845e-");
+  //private List<String> ballots = Arrays.asList("33d9f0f0-08c5-11e7-845e-", "33da1800-08c5-11e7-845e-", "33da3f10-08c5-11e7-845e-", "33da6620-08c5-11e7-845e-", "33da8d30-08c5-11e7-845e-");
+
+  private List<String> ballots;
 
   private class NodeFailure {
     int k; // in which request does it happen?
@@ -78,9 +80,10 @@ public class FailureInjectingScheduler extends Scheduler {
     seed ++;
     failures = new ArrayList<>();
     failedProcesses = new HashSet<>();
+    ballots = new ArrayList<>();
 
-    //setRandomFailures();
-    setFailuresToReproduceBug();
+    setRandomFailures();
+    //setFailuresToReproduceBug();
 
     rounds = new ArrayList<>();
     rounds.add(ProtocolRound.PAXOS_PREPARE);
@@ -113,7 +116,6 @@ public class FailureInjectingScheduler extends Scheduler {
   }
 
   private void setFailuresToReproduceBug() {
-    assert(failures.size() == 6);
     failures.add(new NodeFailure(0, 4, 2));
     failures.add(new NodeFailure(1, 2, 2));
     failures.add(new NodeFailure(1, 4, 0));
@@ -125,7 +127,11 @@ public class FailureInjectingScheduler extends Scheduler {
   @Override
   synchronized public void addNewEvent(int connectionId, PaxosEvent message) {
     super.addNewEvent(connectionId, message);
-    //log.info("Added:  " + message.getBallot());
+
+    if(message.getVerb().equals("PAXOS_PREPARE") && ballots.size() == currentPhase) {
+      ballots.add(message.getBallot());
+      //log.debug("Added:  " + message.getBallot());
+    }
 
     if(IS_NOP) schedule(message);
     else checkForSchedule();
@@ -142,7 +148,7 @@ public class FailureInjectingScheduler extends Scheduler {
           toExecuteInCurRound --;
           if(m.isRequest()) droppedFromNextRound ++;
         } else {
-          log.info("=== Scheduling:  " + m);
+          log.debug("=== Scheduling:  " + m);
           if(ballots.get(currentPhase) == null)
             ballots.add(currentPhase, m.getBallot());
           schedule(m);
@@ -228,7 +234,7 @@ public class FailureInjectingScheduler extends Scheduler {
           log.error("Invalid protocol state");
       }
 
-      //log.info("Moved to the next round: " + rounds.get(currentRound));
+      //log.debug("Moved to the next round: " + rounds.get(currentRound));
 
       executedInCurRound = 0;
       droppedFromNextRound = 0;

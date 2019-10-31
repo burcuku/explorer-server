@@ -9,7 +9,6 @@ import explorer.workload.WorkloadDriver;
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.FileWriter;
 import java.io.IOException;
@@ -24,7 +23,7 @@ public class ServerMain {
         Logger.getRootLogger().setLevel(Level.INFO);
 
         List<String> options = Arrays.asList(args);
-        int seed = 0;
+        int seed = -1;
         if(options.contains("seed")) {
             try {
                 seed = Integer.parseInt(options.get(options.indexOf("seed") + 1));
@@ -34,7 +33,7 @@ public class ServerMain {
         }
 
         ExplorerConf conf = ExplorerConf.initialize("explorer.conf", args);
-        if(seed != 0) conf.setSeed(seed);
+        if(seed > 0) conf.setSeed(seed);
 
         Class<? extends Scheduler> schedulerClass = (Class<? extends Scheduler>) Class.forName(conf.schedulerClass);
         Scheduler scheduler = schedulerClass.getConstructor(ExplorerConf.class).newInstance(conf);
@@ -58,21 +57,20 @@ public class ServerMain {
         workloadDriver.cleanup();
         workloadDriver.prepare(1);
         workloadDriver.startEnsemble();
-
         Thread.sleep(4000);
 
-        writeToFile(seed++);
+        // write to results file
+        writeToFile(seed);
+        // send workload
         workloadDriver.sendWorkload();
-
         while(!scheduler.isExecutionCompleted())
         {
-            Thread.sleep(200);
+            Thread.sleep(250);
         }
         scheduler.onExecutionCompleted();
-
-        //workloadDriver.stopEnsemble();
-        //testingServer.stop();
-
+        workloadDriver.stopEnsemble();
+        Thread.sleep(1000);
+        testingServer.stop();
         serverThread.join();
     }
 

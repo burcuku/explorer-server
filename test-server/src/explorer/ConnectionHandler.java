@@ -3,9 +3,12 @@ package explorer;
 import explorer.net.Handler;
 import explorer.net.MessageSender;
 import explorer.scheduler.Scheduler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ConnectionHandler implements Handler {
 
+  private static final Logger log = LoggerFactory.getLogger(ConnectionHandler.class);
   final Scheduler scheduler;
 
   public ConnectionHandler(Scheduler scheduler) {
@@ -14,7 +17,7 @@ public class ConnectionHandler implements Handler {
 
   @Override
   public void onConnect(int id, MessageSender sender) {
-    System.out.println("Connected Node: " + id);
+    log.info("Connected Node: " + id);
     synchronized (scheduler) {
       scheduler.onConnect(id, sender);
     }
@@ -22,7 +25,7 @@ public class ConnectionHandler implements Handler {
 
   @Override
   public void onDisconnect(int id) {
-    System.out.println("Disconnected Node: " + id);
+    log.info("Disconnected Node: " + id);
     synchronized (scheduler) {
       scheduler.onDisconnect(id);
     }
@@ -38,7 +41,7 @@ public class ConnectionHandler implements Handler {
       if(event.isAckEvent())
         scheduler.addAckEvent((int)event.getSender(), event); // the sender of the ack, event
       else  {
-        System.out.println("==Received from Node: " + id + " Message: " + message );
+        log.debug("==Received from Node: " + id + " Message: " + message );
         scheduler.addNewEvent(id, event);
       }
 

@@ -65,7 +65,7 @@ public class CassVerifier  {
     }
     System.out.println("No bug.");
     if(pw != null) {
-      pw.println("Reproduced the bug.");
+      pw.println("No bug.");
       pw.close();
     }
 
