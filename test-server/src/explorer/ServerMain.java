@@ -1,23 +1,28 @@
 package explorer;
 
+import explorer.coverage.CoverageStrategy;
+import explorer.coverage.LastCliquesStrategy;
 import explorer.net.Handler;
 import explorer.net.TestingServer;
 import explorer.net.socket.SocketServer;
+import explorer.scheduler.FailureInjectingSettings;
 import explorer.scheduler.Scheduler;
+import explorer.scheduler.SchedulerSettings;
 import explorer.workload.CassWorkloadDriver;
 import explorer.workload.WorkloadDriver;
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
+import utils.FileUtils;
 
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.PrintWriter;
+import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
 import java.util.List;
 
 public class ServerMain {
 
+    // seed  OR // nodes to drop??? at each process, round, request
+// takes json string as argument
     public static void main(String[] args) throws Exception {
         BasicConfigurator.configure();
         Logger.getRootLogger().setLevel(Level.INFO);
@@ -35,8 +40,27 @@ public class ServerMain {
         ExplorerConf conf = ExplorerConf.initialize("explorer.conf", args);
         if(seed > 0) conf.setSeed(seed);
 
-        Class<? extends Scheduler> schedulerClass = (Class<? extends Scheduler>) Class.forName(conf.schedulerClass);
-        Scheduler scheduler = schedulerClass.getConstructor(ExplorerConf.class).newInstance(conf);
+        runAll(conf);
+    }
+
+    public static void runAll(ExplorerConf conf) throws Exception {
+        Class<? extends Scheduler> schedulerClass = null;
+        Scheduler scheduler = null;
+        try {
+            schedulerClass = (Class<? extends Scheduler>) Class.forName(conf.schedulerClass);
+            //todo read settings class from config file
+            SchedulerSettings settings = new FailureInjectingSettings(conf);
+            scheduler = schedulerClass.getConstructor(FailureInjectingSettings.class).newInstance(settings);
+            //System.out.println(settings.toJsonStr());
+        } catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException
+            | InvocationTargetException | InstantiationException e) {
+            e.printStackTrace();
+            System.exit(-1);
+        }
+
+        CoverageStrategy coverageStrategy = new LastCliquesStrategy();
+        scheduler.setCoverageStrategy(coverageStrategy);
+
         Handler handler = new ConnectionHandler(scheduler);
 
         // start server which enforces a schedule over distributed system nodes
@@ -60,7 +84,7 @@ public class ServerMain {
         Thread.sleep(4000);
 
         // write to results file
-        writeToFile(seed);
+        FileUtils.writeToFile("result.txt", "\nTest seed: " + conf.getSeed(), true);
         // send workload
         workloadDriver.sendWorkload();
         while(!scheduler.isExecutionCompleted())
@@ -72,20 +96,6 @@ public class ServerMain {
         Thread.sleep(1000);
         testingServer.stop();
         serverThread.join();
-    }
-
-    public static void writeToFile(int seed) {
-        FileWriter fw;
-        PrintWriter pw;
-
-        try {
-            fw = new FileWriter("result.txt", true);
-            pw = new PrintWriter(fw);
-            pw.println("\nTest seed: " + seed);
-            pw.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
     }
 
 }

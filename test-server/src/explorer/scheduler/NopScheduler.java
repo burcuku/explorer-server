@@ -5,14 +5,6 @@ import explorer.PaxosEvent;
 
 public class NopScheduler extends Scheduler {
 
-  public NopScheduler(ExplorerConf conf) {
-
-  }
-
-  public NopScheduler() {
-
-  }
-
   @Override
   protected void checkForSchedule() {
 

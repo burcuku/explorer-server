@@ -50,6 +50,8 @@ public class ExplorerConf {
     schedulerClass = prop.getProperty("scheduler");
     schedulerFile = prop.getProperty("scheduleFile");
 
+    randomSeed = Integer.parseInt(prop.getProperty("randomSeed"));
+
     schedulerFileHasMsgContent = Boolean.parseBoolean(prop.getProperty("scheduleHasMsgContent"));
 
     targetDirectory = overrideArgs.getOrDefault("targetDirectory", prop.getProperty("targetDirectory"));

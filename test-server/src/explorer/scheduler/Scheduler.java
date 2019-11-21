@@ -1,5 +1,7 @@
 package explorer.scheduler;
 
+import explorer.coverage.CoverageStrategy;
+import explorer.coverage.NopStrategy;
 import explorer.net.MessageSender;
 import explorer.PaxosEvent;
 import explorer.verifier.CassVerifier;
@@ -15,7 +17,7 @@ import java.util.concurrent.LinkedBlockingDeque;
 
 public abstract class Scheduler {
   private static Logger log = LoggerFactory.getLogger(Scheduler.class);
-  protected boolean IS_NOP = false; // Reset queries are run in NOP mode, without any faults injected
+  SchedulerSettings settings;
 
   protected ConcurrentHashMap<Integer, MessageSender> messageSenders = new ConcurrentHashMap<Integer, MessageSender>(); //connectionId to sender
   protected ConcurrentHashMap<PaxosEvent, Integer> events = new ConcurrentHashMap<PaxosEvent, Integer>(); // event to message sender map
@@ -30,6 +32,16 @@ public abstract class Scheduler {
   private ConcurrentHashMap<PaxosEvent, Integer> onFlightMsgSenders = new ConcurrentHashMap<PaxosEvent, Integer>();
 
   private boolean isNumEventsBounded = false; //todo configure
+
+  protected CoverageStrategy coverageStrategy = new NopStrategy();
+
+  public Scheduler() {
+
+  }
+
+  public Scheduler(SchedulerSettings settings) {
+    this.settings = settings;
+  }
 
   public final synchronized void onConnect(int connectionId, MessageSender sender) {
     messageSenders.put(connectionId, sender);
@@ -106,6 +118,7 @@ public abstract class Scheduler {
     for(Queue<PaxosEvent> queue: onFlightToReceiver.values()) {
       if(!queue.isEmpty()) return false;
     }
+
     return true;
   }
 
@@ -117,14 +130,10 @@ public abstract class Scheduler {
     }
     log.debug(sb.toString());
     new CassVerifier().verify();
+    coverageStrategy.onScheduleComplete(settings.toJsonStr());
   }
 
-  public void reset() {
-    events.clear();
-    scheduled.clear();
-  }
-
-  public void setISNOP(boolean v) {
-    IS_NOP = v;
+  public void setCoverageStrategy(CoverageStrategy c) {
+    coverageStrategy = c;
   }
 }

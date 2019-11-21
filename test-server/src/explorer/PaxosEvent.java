@@ -13,6 +13,9 @@ public class PaxosEvent {
   public static int NUM_PAXOS_ROUNDS = 6;
   public static final String ACK_PAYLOAD = "ACK";
 
+  // for customized round identification for Cassandra's Paxos
+  public enum ProtocolRound {PAXOS_PREPARE, PAXOS_PREPARE_RESPONSE, PAXOS_PROPOSE, PAXOS_PROPOSE_RESPONSE, PAXOS_COMMIT, PAXOS_COMMIT_RESPONSE};
+
   public PaxosEvent(long sender, long recv, String verb, String payload, String usrval) {
     this.sender = sender;
     this.recv = recv;
