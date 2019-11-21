@@ -49,7 +49,7 @@ public class ServerMain {
         try {
             schedulerClass = (Class<? extends Scheduler>) Class.forName(conf.schedulerClass);
             //todo read settings class from config file
-            SchedulerSettings settings = new FailureInjectingSettings(conf);
+            SchedulerSettings settings = new FailureInjectingSettings(conf.getSeed());
             scheduler = schedulerClass.getConstructor(FailureInjectingSettings.class).newInstance(settings);
             //System.out.println(settings.toJsonStr());
         } catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException

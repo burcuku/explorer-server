@@ -3,6 +3,7 @@ package explorer.coverage;
 // instead of set, keep a string representing a clique for the nodes
 // e.g. Node2 Node1 Node0 -> 111, Node2 Node0 -> 101, ...
 
+import java.util.Iterator;
 import java.util.Set;
 
 public class Clique {
@@ -45,5 +46,13 @@ public class Clique {
     Clique c = (Clique) obj;
 
     return this.clique == c.getClique() && this.round.equals(c.round);
+  }
+
+  @Override
+  public int hashCode() {
+    int result = 17;
+    result = 31 * result + clique;
+    result = 31 * result + round.hashCode();
+    return result;
   }
 }

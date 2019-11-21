@@ -1,5 +1,6 @@
 package explorer.scheduler;
 
+import explorer.ExplorerConf;
 import explorer.PaxosEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,6 +13,7 @@ import java.util.*;
  */
 public class FailureInjectingScheduler extends Scheduler {
   private static final Logger log = LoggerFactory.getLogger(FailureInjectingScheduler.class);
+  ExplorerConf conf = ExplorerConf.getInstance();
 
   // variables maintaining the current state of the protocol execution
   private int currentRound;        // between 0 to (NUM_LIVENESS_ROUNDS-1)
@@ -38,7 +40,7 @@ public class FailureInjectingScheduler extends Scheduler {
     rounds.add(PaxosEvent.ProtocolRound.PAXOS_PREPARE);
     currentRound = 0;
     currentPhase = 0;
-    toExecuteInCurRound = settings.NUM_PROCESSES;
+    toExecuteInCurRound = conf.NUM_PROCESSES;
     executedInCurRound = 0;
     droppedFromNextRound = 0;
   }
@@ -117,7 +119,7 @@ public class FailureInjectingScheduler extends Scheduler {
       switch(rounds.get(currentRound-1)) {
         case PAXOS_PREPARE:
           rounds.add(PaxosEvent.ProtocolRound.PAXOS_PREPARE_RESPONSE);
-          toExecuteInCurRound = ((FailureInjectingSettings)settings).NUM_PROCESSES - droppedFromNextRound;
+          toExecuteInCurRound = conf.NUM_PROCESSES - droppedFromNextRound;
           break;
         case PAXOS_PREPARE_RESPONSE:
           if(toExecuteInCurRound < ((FailureInjectingSettings)settings).NUM_MAJORITY) {
@@ -127,11 +129,11 @@ public class FailureInjectingScheduler extends Scheduler {
             failedProcesses.clear();
           }
           else rounds.add(PaxosEvent.ProtocolRound.PAXOS_PROPOSE);
-          toExecuteInCurRound = ((FailureInjectingSettings)settings).NUM_PROCESSES;
+          toExecuteInCurRound = conf.NUM_PROCESSES;
           break;
         case PAXOS_PROPOSE:
           rounds.add(PaxosEvent.ProtocolRound.PAXOS_PROPOSE_RESPONSE);
-          toExecuteInCurRound = ((FailureInjectingSettings)settings).NUM_PROCESSES - droppedFromNextRound;
+          toExecuteInCurRound = conf.NUM_PROCESSES - droppedFromNextRound;
           break;
         case PAXOS_PROPOSE_RESPONSE: //todo make it more accurate with replies! (even with majority of replies can turn back to PREPARE)
           if(toExecuteInCurRound < ((FailureInjectingSettings)settings).NUM_MAJORITY) {
@@ -141,16 +143,16 @@ public class FailureInjectingScheduler extends Scheduler {
             failedProcesses.clear();
           }
           else rounds.add(PaxosEvent.ProtocolRound.PAXOS_COMMIT);
-          toExecuteInCurRound = ((FailureInjectingSettings)settings).NUM_PROCESSES;
+          toExecuteInCurRound = conf.NUM_PROCESSES;
           break;
         case PAXOS_COMMIT:
           rounds.add(PaxosEvent.ProtocolRound.PAXOS_COMMIT_RESPONSE);
-          toExecuteInCurRound = ((FailureInjectingSettings)settings).NUM_PROCESSES - droppedFromNextRound;
+          toExecuteInCurRound = conf.NUM_PROCESSES - droppedFromNextRound;
           break;
         case PAXOS_COMMIT_RESPONSE:
           coverageStrategy.onRequestPhaseComplete(rounds.get(currentRound-1).toString(), failedProcesses);
           rounds.add(PaxosEvent.ProtocolRound.PAXOS_PREPARE);
-          toExecuteInCurRound = ((FailureInjectingSettings)settings).NUM_PROCESSES;
+          toExecuteInCurRound = conf.NUM_PROCESSES;
           currentPhase ++;
           failedProcesses.clear();
           break;

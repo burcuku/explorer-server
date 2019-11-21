@@ -130,7 +130,7 @@ public abstract class Scheduler {
     }
     log.debug(sb.toString());
     new CassVerifier().verify();
-    coverageStrategy.onScheduleComplete(settings.toJsonStr());
+    coverageStrategy.onScheduleComplete(FailureInjectingSettings.toJsonStr(settings));
   }
 
   public void setCoverageStrategy(CoverageStrategy c) {

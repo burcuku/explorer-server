@@ -1,11 +1,16 @@
 package utils;
 
+import explorer.scheduler.FailureInjectingScheduler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
 public class FileUtils {
+  private static final Logger log = LoggerFactory.getLogger(FileUtils.class);
 
   public static void writeToFile(String fileName, String content, boolean append) {
     try (FileWriter fw = new FileWriter(fileName, append); PrintWriter pw = new PrintWriter(fw)) {
@@ -57,11 +62,16 @@ public class FileUtils {
     List<String> lines = new ArrayList<>();
     try {
       File file = new File(fileName);
-      if(!file.exists()) return lines;
+      if(!file.exists()) {
+        log.error("No such file to read lines from: " + fileName);
+        return lines;
+      }
 
       Scanner scanner = new Scanner(file);
       while (scanner.hasNextLine()) {
-        lines.add(scanner.nextLine());
+        String line = scanner.nextLine();
+        if(!line.isEmpty())
+          lines.add(line);
       }
       scanner.close();
     } catch (FileNotFoundException e) {
