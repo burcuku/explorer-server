@@ -1,11 +1,9 @@
 package explorer.scheduler;
 
-import com.google.gson.*;
 import com.google.gson.annotations.Expose;
 import explorer.ExplorerConf;
 import utils.FileUtils;
 
-import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -39,12 +37,7 @@ public class FailureInjectingSettings extends SchedulerSettings {
   public FailureInjectingSettings(int seed) {
     this.seed = seed;
     random = new Random(seed);
-
-    if(ExplorerConf.getInstance().testMutations)
-      failures = getMutationFailures();
-
-    if(failures.size() == 0)
-      failures = getRandomFailures();
+    failures = getRandomFailures();
     //failures = getFailuresToReproduceBug();
   }
 

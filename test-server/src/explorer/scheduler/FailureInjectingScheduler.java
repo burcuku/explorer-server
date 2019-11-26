@@ -43,6 +43,8 @@ public class FailureInjectingScheduler extends Scheduler {
     toExecuteInCurRound = conf.NUM_PROCESSES;
     executedInCurRound = 0;
     droppedFromNextRound = 0;
+
+    log.debug("Using seed: " + settings.seed);
   }
 
   @Override

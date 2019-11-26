@@ -9,16 +9,16 @@ def main(numtests):
     os.chdir("..")
     start_all = time.time()
     for i in range(1, int(numTests)+1):
-        print("Running test %s" % i)
-        startB = time.time()
+        #print("Running test %s" % i)
+        #startB = time.time()
 
         seed = i + 12345678
-        call("mvn {0} {1} {2}".format("exec:java", "-Dexec.mainClass=explorer.ServerMain", "-Dexec.args=\"seed %s\" " % str(seed)), shell=True)
+        #call("mvn {0} {1} {2}".format("exec:java", "-Dexec.mainClass=explorer.ServerMain", "-Dexec.args=\"seed %s\" " % str(seed)), shell=True)
 
-        endB = time.time()
-        elapsedSec = endB - startB
-        print("All Seconds for test %s: %s" % (i, elapsedSec))
-        print("All Minutes for test %s: %s" % (i, elapsedSec / 60))
+        #endB = time.time()
+        #elapsedSec = endB - startB
+        #print("All Seconds for test %s: %s" % (i, elapsedSec))
+        #print("All Minutes for test %s: %s" % (i, elapsedSec / 60))
 
     endAll = time.time()
     elapsedSec = endAll - start_all
@@ -26,12 +26,21 @@ def main(numtests):
     print("All Minutes for all tests: %s" % (elapsedSec / 60))
 
     # create mutations
-    call("mvn {0} {1}".format("exec:java", "-Dexec.mainClass=explorer.MutatorCreatorMain"), shell=True)
+    #call("mvn {0} {1}".format("exec:java", "-Dexec.mainClass=explorer.MutatorCreatorMain"), shell=True)
 
     startM = time.time()
     # run mutations
-    while not isFileEmpty("mutations"):
-        call("mvn {0} {1} {2}".format("exec:java", "-Dexec.mainClass=explorer.ServerMain", "-Dexec.args=\"seed %s\" " % str(seed)), shell=True)
+    mutationNo = 1
+    # read mutations file and print them:
+    f = open("mutations", 'r')
+    for line in f.readlines():
+        if len(line.strip()) != 0 :
+            print("Running mutation %s" % mutationNo)
+            mutation = line.rstrip('\n')
+            #print mutation
+            call("mvn {0} {1} {2}".format("exec:java", "-Dexec.mainClass=explorer.ServerMain", "-Dexec.args=\"seed {0} failures {1}\"".format(str(seed), mutation)), shell=True)
+            mutationNo = mutationNo + 1
+
     endM = time.time()
     elapsedM = endM - startM
     elapsedSec2 = endM - start_all

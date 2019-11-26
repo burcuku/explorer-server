@@ -17,7 +17,9 @@ import utils.FileUtils;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.*;
 
 public class ServerMain {
 
@@ -25,7 +27,7 @@ public class ServerMain {
 // takes json string as argument
     public static void main(String[] args) throws Exception {
         BasicConfigurator.configure();
-        Logger.getRootLogger().setLevel(Level.INFO);
+        Logger.getRootLogger().setLevel(Level.DEBUG);
 
         List<String> options = Arrays.asList(args);
         int seed = -1;
@@ -37,19 +39,33 @@ public class ServerMain {
             }
         }
 
+        String failureSettingsJsonStr = "";
+
+        if(options.contains("failures")) {
+          try {
+            failureSettingsJsonStr =options.get(options.indexOf("failures") + 1);
+          } catch (Exception e) {
+            throw new RuntimeException("Invalid command line arguments.\n" + e.getMessage());
+          }
+        }
+
         ExplorerConf conf = ExplorerConf.initialize("explorer.conf", args);
         if(seed > 0) conf.setSeed(seed);
 
-        runAll(conf);
+        runAll(conf, failureSettingsJsonStr);
     }
 
-    public static void runAll(ExplorerConf conf) throws Exception {
+    public static void runAll(ExplorerConf conf, String failureSettingsJsonStr) throws Exception {
         Class<? extends Scheduler> schedulerClass = null;
         Scheduler scheduler = null;
+        SchedulerSettings settings = null;
         try {
             schedulerClass = (Class<? extends Scheduler>) Class.forName(conf.schedulerClass);
             //todo read settings class from config file
-            SchedulerSettings settings = new FailureInjectingSettings(conf.getSeed());
+            if(failureSettingsJsonStr.equals(""))
+              settings = new FailureInjectingSettings(conf.getSeed());
+            else
+              settings = FailureInjectingSettings.toObject(failureSettingsJsonStr);
             scheduler = schedulerClass.getConstructor(FailureInjectingSettings.class).newInstance(settings);
             //System.out.println(settings.toJsonStr());
         } catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException
@@ -87,6 +103,23 @@ public class ServerMain {
         FileUtils.writeToFile("result.txt", "\nTest seed: " + conf.getSeed(), true);
         // send workload
         workloadDriver.sendWorkload();
+
+
+      ExecutorService ex = Executors.newSingleThreadExecutor();
+      Thread t = new Thread(new Runnable() {
+        public void run() {
+          try {
+            Thread.sleep(15000);
+          } catch (InterruptedException e) {
+            e.printStackTrace();
+          }
+          System.out.println("Shutting down");
+          FileUtils.writeToFile("result.txt", "timed out - shutting down", true);
+          System.exit(-1);
+        }
+      });
+      t.start();
+
         while(!scheduler.isExecutionCompleted())
         {
             Thread.sleep(250);
@@ -94,6 +127,7 @@ public class ServerMain {
         scheduler.onExecutionCompleted();
         workloadDriver.stopEnsemble();
         Thread.sleep(1000);
+        t.stop();
         testingServer.stop();
         serverThread.join();
     }

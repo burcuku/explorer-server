@@ -32,7 +32,6 @@ public class ExplorerConf {
   public final String schedulerClass;
   public final String schedulerFile;
   public final boolean schedulerFileHasMsgContent;
-  public final boolean testMutations;
 
   public final String targetDirectory;
   public final String initialDataDirectory;
@@ -61,7 +60,6 @@ public class ExplorerConf {
     randomSeed = Integer.parseInt(prop.getProperty("randomSeed"));
     bugDepth = Integer.parseInt(prop.getProperty("bugDepth"));
 
-    testMutations = Boolean.parseBoolean(prop.getProperty("testMutations"));
     schedulerFileHasMsgContent = Boolean.parseBoolean(prop.getProperty("scheduleHasMsgContent"));
 
     targetDirectory = overrideArgs.getOrDefault("targetDirectory", prop.getProperty("targetDirectory"));
