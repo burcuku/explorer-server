@@ -123,12 +123,14 @@ public abstract class Scheduler {
   }
 
   public void onExecutionCompleted() {
-    StringBuilder sb = new StringBuilder("Schedule: ");
-    for(PaxosEvent e: scheduled) {
-      //System.out.println(e);
-      sb.append("\n").append(PaxosEvent.getEventId(e) + " " + e.getPayload());
+    if(log.isDebugEnabled()) {
+      StringBuilder sb = new StringBuilder("Schedule: ");
+      for(PaxosEvent e: scheduled) {
+        //System.out.println(e);
+        sb.append("\n").append(PaxosEvent.getEventId(e) + " " + e.getPayload());
+      }
+      log.debug(sb.toString());
     }
-    log.debug(sb.toString());
     new CassVerifier().verify();
     coverageStrategy.onScheduleComplete(FailureInjectingSettings.toJsonStr(settings));
   }

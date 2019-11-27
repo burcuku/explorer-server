@@ -27,7 +27,7 @@ public class ServerMain {
 // takes json string as argument
     public static void main(String[] args) throws Exception {
         BasicConfigurator.configure();
-        Logger.getRootLogger().setLevel(Level.DEBUG);
+        Logger.getRootLogger().setLevel(Level.INFO);
 
         List<String> options = Arrays.asList(args);
         int seed = -1;

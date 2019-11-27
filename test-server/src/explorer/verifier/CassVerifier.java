@@ -34,17 +34,6 @@ public class CassVerifier  {
   private boolean checkDataConsistency() {
 	  getValues();
 
-    FileWriter fw;
-    PrintWriter pw = null;
-
-    try {
-      fw = new FileWriter("result.txt", true);
-      pw = new PrintWriter(fw);
-    } catch (IOException e) {
-      e.printStackTrace();
-    }
-
-
     try {
       value_1 = map.get("value_1");
       value_2 = map.get("value_2");
@@ -52,9 +41,14 @@ public class CassVerifier  {
       System.out.println("Value1: " + value_1 + "    Value2: " + value_2);
       if (value_1.equals("A") && (value_2.equals("B"))) {
         System.out.println("Reproduced the bug.");
-        if(pw != null) {
+
+        try {
+          FileWriter fw = new FileWriter("result.txt", true);
+          PrintWriter pw = new PrintWriter(fw);
           pw.println("Reproduced the bug.");
           pw.close();
+        } catch (IOException e) {
+          e.printStackTrace();
         }
         return false;
       }
@@ -63,12 +57,6 @@ public class CassVerifier  {
       System.out.println(e.getMessage());
       return true;
     }
-    System.out.println("No bug.");
-    if(pw != null) {
-      pw.println("No bug.");
-      pw.close();
-    }
-
     return true;
   }
 

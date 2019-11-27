@@ -25,8 +25,9 @@ public class LastCliquesStrategy extends CoverageStrategy {
 
   public void onScheduleComplete(String scheduleTag) {
     // write coverage (to be processed by the analyzer program) and the introduced failures (for debugging/analysis)
-    FileUtils.writeToFile("covered", LastCliques.toJsonStr(current) + "\n" + scheduleTag + "\n\n", true); // used for coverage exploration
-    current.clear();
+    //FileUtils.writeToFile("covered", LastCliques.toJsonStr(current) + "\n" + scheduleTag + "\n\n", true); // used for coverage exploration
+    FileUtils.writeToFile("covered", current.getCoverageAsStr(), true); // used for coverage exploration
+    //current.clear();
   }
 
   public static class LastCliques {
