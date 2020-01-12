@@ -22,7 +22,7 @@ public class CassWorkloadDriver implements WorkloadDriver {
 
   private int testId;
 
-  public CassWorkloadDriver(WorkloadDirs dirs, int numNodes, String javaPath) throws Exception {
+  public CassWorkloadDriver(WorkloadDirs dirs, int numNodes, String javaPath) {
     this.numNodes = numNodes;
     this.dirs = dirs;
     this.classpath = getClasspath();
@@ -30,13 +30,20 @@ public class CassWorkloadDriver implements WorkloadDriver {
   }
 
   @Override
-  public void prepare(int testId) throws Exception {
+  public void prepare(int testId) {
     this.testId = testId;
     CassNodeConfig template = new CassNodeConfig(dirs);
-    for (int i = 0; i < numNodes; i++) {
-      template.prepareRuntime(i);
-      template.applyNodeConfig(i, numNodes);
+    try {
+      for (int i = 0; i < numNodes; i++) {
+        template.prepareRuntime(i);
+        template.applyNodeConfig(i, numNodes);
+      }
+    } catch(IOException e) {
+      log.error("Cannot prepare test folders");
+      e.printStackTrace();
+      System.exit(-1);
     }
+
   }
 
   @Override
@@ -54,6 +61,19 @@ public class CassWorkloadDriver implements WorkloadDriver {
   @Override
   public void sendWorkload() {
     CassWorkload.execute6023();
+  }
+
+  @Override
+  public void submitQuery(int nodeId, String query) {
+    if(nodeId >= numNodes)
+      log.error("Cannot submit query to node " + nodeId + ". No such node.");
+    else
+      CassWorkload.submitQuery(nodeId, query);
+  }
+
+  @Override
+  public void submitQueries(List<Integer> nodeIds, List<String> queries) {
+    CassWorkload.submitQueries(nodeIds, queries);
   }
 
   @Override
@@ -116,14 +136,20 @@ public class CassWorkloadDriver implements WorkloadDriver {
     }
   }
 
-  private String getClasspath() throws Exception {
+  private String getClasspath() {
     List<String> list = new ArrayList<>();
-    list.add(dirs.getTargetHome().resolve("build/classes/main").toString());
-    list.add(dirs.getTargetHome().resolve("build/classes/thrift").toString());
-    list.addAll(Files.list(dirs.getTargetHome().resolve("lib"))
-        .filter(path -> path.toString().endsWith(".jar"))
-        .map(path -> path.toString())
-        .collect(Collectors.toList()));
+    try {
+      list.add(dirs.getTargetHome().resolve("build/classes/main").toString());
+      list.add(dirs.getTargetHome().resolve("build/classes/thrift").toString());
+      list.addAll(Files.list(dirs.getTargetHome().resolve("lib"))
+              .filter(path -> path.toString().endsWith(".jar"))
+              .map(path -> path.toString())
+              .collect(Collectors.toList()));
+    } catch (IOException e) {
+      log.error("Cannot get classpath for initializing data folders.");
+      e.printStackTrace();
+      System.exit(-1);
+    }
 
     return list.stream().map(Object::toString)
         .collect(Collectors.joining(":"));

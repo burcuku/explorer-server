@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.stream.Collectors;
@@ -46,10 +47,14 @@ public class ExplorerConf {
 
   private ExplorerConf(String configFile, String[] args) {
     Properties prop = loadProperties(configFile);
-    Map<String, String> overrideArgs = Arrays.stream(args)
-        .filter(s -> s.contains("="))
-        .map(s -> Arrays.asList(s.split("=")))
-        .collect(Collectors.toMap(kv -> kv.get(0), kv -> kv.get(1)));
+    Map<String, String> overrideArgs = new HashMap();
+
+    if(args != null && args.length != 0) {
+      overrideArgs = Arrays.stream(args)
+              .filter(s -> s.contains("="))
+              .map(s -> Arrays.asList(s.split("=")))
+              .collect(Collectors.toMap(kv -> kv.get(0), kv -> kv.get(1)));
+    }
 
     portNumber = Integer.parseInt(prop.getProperty("portNumber"));
     numberOfClients = Integer.parseInt(prop.getProperty("numberOfClients"));
@@ -79,7 +84,7 @@ public class ExplorerConf {
     timeBetweenQueriesMillis = Integer.parseInt(prop.getProperty("timeBetweenQueriesMillis"));
   }
 
-  public WorkloadDirs getWorkloadDirs() throws IOException {
+  public WorkloadDirs getWorkloadDirs() {
     return new WorkloadDirs(targetDirectory, initialDataDirectory, runDirectory);
   }
 

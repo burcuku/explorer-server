@@ -30,6 +30,10 @@ public class FailureInjectingScheduler extends Scheduler {
   //private List<String> ballots = Arrays.asList("33d9f0f0-08c5-11e7-845e-", "33da1800-08c5-11e7-845e-", "33da3f10-08c5-11e7-845e-", "33da6620-08c5-11e7-845e-", "33da8d30-08c5-11e7-845e-");
   private List<String> ballots;
 
+  // used for online control of the schedule by the user
+  boolean suspended;
+  final boolean online;
+
   public FailureInjectingScheduler(FailureInjectingSettings settings) {
     this.settings = settings;
     failures = new ArrayList<>(settings.getFailures());
@@ -44,7 +48,15 @@ public class FailureInjectingScheduler extends Scheduler {
     executedInCurRound = 0;
     droppedFromNextRound = 0;
 
-    log.debug("Using seed: " + settings.seed);
+    if(settings.equals(FailureInjectingSettings.ONLINE_CONTROLLED)) {
+      log.debug("Using online control of the failing nodes.");
+      online = true;
+      suspended = true;
+    } else {
+      log.debug("Using failures: " + settings.getFailures() + " seed: " + settings.seed);
+      online = false;
+      suspended = false;
+    }
   }
 
   @Override
@@ -56,7 +68,7 @@ public class FailureInjectingScheduler extends Scheduler {
       //log.debug("Added:  " + message.getBallot());
     }
 
-    checkForSchedule();
+    if(!suspended) checkForSchedule();
   }
 
   @Override
@@ -128,7 +140,8 @@ public class FailureInjectingScheduler extends Scheduler {
             coverageStrategy.onRequestPhaseComplete(rounds.get(currentRound-1).toString(), failedProcesses);
             rounds.add(PaxosEvent.ProtocolRound.PAXOS_PREPARE);
             currentPhase ++;
-            failedProcesses.clear();
+            // reset the quorum of nodes if the settings are not assigned online
+            if(!online) failedProcesses.clear();
           }
           else rounds.add(PaxosEvent.ProtocolRound.PAXOS_PROPOSE);
           toExecuteInCurRound = conf.NUM_PROCESSES;
@@ -142,7 +155,8 @@ public class FailureInjectingScheduler extends Scheduler {
             coverageStrategy.onRequestPhaseComplete(rounds.get(currentRound-1).toString(), failedProcesses);
             rounds.add(PaxosEvent.ProtocolRound.PAXOS_PREPARE);
             currentPhase ++;
-            failedProcesses.clear();
+            // reset the quorum of nodes if the settings are not assigned online
+            if(!online) failedProcesses.clear();
           }
           else rounds.add(PaxosEvent.ProtocolRound.PAXOS_COMMIT);
           toExecuteInCurRound = conf.NUM_PROCESSES;
@@ -156,16 +170,25 @@ public class FailureInjectingScheduler extends Scheduler {
           rounds.add(PaxosEvent.ProtocolRound.PAXOS_PREPARE);
           toExecuteInCurRound = conf.NUM_PROCESSES;
           currentPhase ++;
-          failedProcesses.clear();
+          // reset the quorum of nodes if the settings are not assigned online
+          if(!online) failedProcesses.clear();
           break;
         default:
           log.error("Invalid protocol state");
       }
 
-      //log.debug("Moved to the next round: " + rounds.get(currentRound));
-
+      // update values related to failures for the current round:
       executedInCurRound = 0;
       droppedFromNextRound = 0;
+
+      //log.debug("Moved to the next round: " + rounds.get(currentRound));
+      // We moved to next round, notify the clients and update failure structures with requested settings
+      if(online && runUntilRound == currentRound) {
+        suspended = true;
+        synchronized (o) {
+          o.notify();
+        }
+      }
     }
   }
 
@@ -187,4 +210,51 @@ public class FailureInjectingScheduler extends Scheduler {
     return scheduled.size() >= 36; // todo parametrize
   }
 
+  Object o = new Object(); // used for notification of the client
+
+  public void failNode(int nodeId) {
+    if(nodeId >= conf.NUM_PROCESSES) {
+      log.error("Cannot fail node " + nodeId + ". No such node.");
+    } else {
+      failedProcesses.add(nodeId);
+    }
+  }
+
+  public void resumeNode(int nodeId) {
+    if(nodeId >= conf.NUM_PROCESSES) {
+      log.error("Cannot resume node " + nodeId + ". No such node.");
+    } else {
+      failedProcesses.remove(nodeId);
+    }
+  }
+
+  int runUntilRound = -1;
+
+  public void runUntilRound(int i) {
+    if(currentRound >= i) {
+      log.error("Round " + i + " has already been executed. Is scheduler suspended ? " + suspended);
+      return;
+    }
+    runUntilRound = i;// blocks until the round is reached and the runnable is executed (Failures to inject are set)
+    suspended = false;
+
+    Thread t = new Thread(() -> checkForSchedule());
+    t.start();
+
+    try {
+      synchronized (o) {
+        while(currentRound < i)
+          o.wait();  // blocks until the round is reached and the runnable is executed (Failures to inject are set)
+      }
+    } catch (InterruptedException e) {
+      e.printStackTrace();
+    }
+
+  }
+
+  @Override
+  public synchronized void runToCompletion() {
+    suspended = false;
+    checkForSchedule();
+  }
 }

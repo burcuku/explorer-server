@@ -41,7 +41,7 @@ public class CassVerifier  {
       System.out.println("Value1: " + value_1 + "    Value2: " + value_2);
       if (value_1.equals("A") && (value_2.equals("B"))) {
         System.out.println("Reproduced the bug.");
-
+/*
         try {
           FileWriter fw = new FileWriter("result.txt", true);
           PrintWriter pw = new PrintWriter(fw);
@@ -49,7 +49,7 @@ public class CassVerifier  {
           pw.close();
         } catch (IOException e) {
           e.printStackTrace();
-        }
+        }*/
         return false;
       }
     } catch (Exception e) {
@@ -70,10 +70,10 @@ public class CassVerifier  {
 			ResultSet rs = session.execute("SELECT * FROM tests");
 			//System.out.println("Row acquired");
 			Row row = rs.one();
-      map.put("owner", row.getString("owner"));
-      map.put("value_1", row.getString("value_1"));
-      map.put("value_2", row.getString("value_2"));
-      map.put("value_3", row.getString("value_3"));
+            map.put("owner", row.getString("owner"));
+            map.put("value_1", row.getString("value_1"));
+            map.put("value_2", row.getString("value_2"));
+            map.put("value_3", row.getString("value_3"));
 		} catch (Exception e) {
 			System.out.println("ERROR in reading row.");
 			System.out.println(e.getMessage());

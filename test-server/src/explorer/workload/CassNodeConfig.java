@@ -28,7 +28,7 @@ class CassNodeConfig {
     }
   }
 
-  void applyNodeConfig(int nodeId, int nodeCount) throws Exception {
+  void applyNodeConfig(int nodeId, int nodeCount) throws IOException {
     Path destinationFile = dirs.nodeHome(nodeId, "config", "cassandra.yaml");
 
     Files.copy(configTemplateFile, destinationFile, StandardCopyOption.REPLACE_EXISTING);

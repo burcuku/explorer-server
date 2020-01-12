@@ -27,10 +27,12 @@ public class FailureInjectingSettings extends SchedulerSettings {
 
   private int numMutators = 0;
 
+  // does not introduce any failures prior to execution, failures introduced during runtime
+  public static FailureInjectingSettings ONLINE_CONTROLLED = new FailureInjectingSettings(new ArrayList<>());
+
   // to be used for deserialization (failures will be set)
   public FailureInjectingSettings() {
-    seed = conf.getSeed();
-    random = new Random(seed);
+    this(ExplorerConf.getInstance().getSeed());
   }
 
   // to be used for creation
@@ -41,6 +43,9 @@ public class FailureInjectingSettings extends SchedulerSettings {
     //failures = getFailuresToReproduceBug();
   }
 
+  public FailureInjectingSettings(List<NodeFailure> failures) {
+    this.failures = failures;
+  }
 
   // constructor used when constructed from a mutation - written as json for next executions
   private FailureInjectingSettings(int seed, List<NodeFailure> failures, int mutationNo) {
@@ -48,7 +53,6 @@ public class FailureInjectingSettings extends SchedulerSettings {
     this.mutationNo = mutationNo;
     this.failures = failures;
   }
-
 
 
   @Override

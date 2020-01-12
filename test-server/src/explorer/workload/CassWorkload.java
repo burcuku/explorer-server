@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 
 import java.net.InetSocketAddress;
 import java.util.Collections;
+import java.util.List;
 
 class CassWorkload {
 
@@ -38,6 +39,33 @@ class CassWorkload {
 
   static void reset6023() {
       executeCql(1, "test", "UPDATE tests SET value_1 = 'value_1', value_2 = 'value_2' WHERE name = 'testing'");
+  }
+
+  static void submitQuery(int nodeId, String query) {
+    executeCql(nodeId, "test", query);
+    try {
+      Thread.sleep(timeBetweenQueriesMillis);
+    } catch (InterruptedException e) {
+      e.printStackTrace();
+    }
+  }
+
+  static void submitQueries(List<Integer> nodeIds, List<String> queries) {
+    if(nodeIds.size() != queries.size()) {
+      log.error("The number of nodes to submit is not equal to the number of the queries.");
+      System.exit(-1);
+    }
+
+    for(int i = 0; i < nodeIds.size(); i++) {
+      try {
+        executeCql(nodeIds.get(i), "test", queries.get(i));
+        //executeCql(0, "test", "UPDATE tests SET value_1 = 'A' WHERE name = 'testing' IF owner = 'user_1';");//.get();
+        Thread.sleep(timeBetweenQueriesMillis);
+      } catch (InterruptedException e) {
+        log.error("Interrupted while sleeping", e);
+      }
+    }
+
   }
 
   private static boolean executeCql(int nodeId, String keyspace, String cql) {

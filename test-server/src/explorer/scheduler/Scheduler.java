@@ -119,23 +119,47 @@ public abstract class Scheduler {
       if(!queue.isEmpty()) return false;
     }
 
+    onExecutionCompleted();
     return true;
-  }
-
-  public void onExecutionCompleted() {
-    if(log.isDebugEnabled()) {
-      StringBuilder sb = new StringBuilder("Schedule: ");
-      for(PaxosEvent e: scheduled) {
-        //System.out.println(e);
-        sb.append("\n").append(PaxosEvent.getEventId(e) + " " + e.getPayload());
-      }
-      log.debug(sb.toString());
-    }
-    new CassVerifier().verify();
-    coverageStrategy.onScheduleComplete(FailureInjectingSettings.toJsonStr(settings));
   }
 
   public void setCoverageStrategy(CoverageStrategy c) {
     coverageStrategy = c;
   }
+
+
+  private Runnable executionCompletedRunnable = null;
+  /*new Runnable() {
+    @Override
+    public void run() {
+      log.debug(getScheduleAsStr());
+      new CassVerifier().verify();
+    }
+  };*/
+
+  public void setOnExecutionCompleted(Runnable r) {
+    executionCompletedRunnable = r;
+  }
+
+  private void onExecutionCompleted() {
+    if(executionCompletedRunnable != null) executionCompletedRunnable.run();
+    coverageStrategy.onScheduleComplete(FailureInjectingSettings.toJsonStr(settings));
+  }
+
+  public String getScheduleAsStr() {
+    StringBuilder sb = new StringBuilder("Schedule: ");
+    for(PaxosEvent e: scheduled) {
+      //System.out.println(e);
+      sb.append("\n").append(PaxosEvent.getEventId(e) + " " + e.getPayload());
+    }
+    return sb.toString();
+  }
+
+  public abstract void failNode(int nodeId);
+
+  public abstract void resumeNode(int nodeId);
+
+  public abstract void runUntilRound(int i);
+
+  public abstract void runToCompletion();
 }

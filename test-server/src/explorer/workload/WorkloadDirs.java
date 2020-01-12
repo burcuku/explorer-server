@@ -12,18 +12,26 @@ public class WorkloadDirs {
 
   private static Logger log = LoggerFactory.getLogger(WorkloadDirs.class);
 
-  private final Path targetHome;
-  private final Path runDirectory;
-  private final Path initDataDir;
+  private Path targetHome;
+  private Path runDirectory;
+  private Path initDataDir;
 
-  public WorkloadDirs(String targetHome, String runDirectory, String initDataDir) throws IOException {
-    this.targetHome = verifyDirectoryExists(targetHome);
-    this.initDataDir = verifyDirectoryExists(initDataDir);
-    this.runDirectory = ensureDirectoryExists(runDirectory);
+  public WorkloadDirs(String targetHome, String runDirectory, String initDataDir) {
+    try {
+      this.targetHome = verifyDirectoryExists(targetHome);
+      this.initDataDir = verifyDirectoryExists(initDataDir);
+      this.runDirectory = ensureDirectoryExists(runDirectory);
 
-    log.info("Target system directory: {}", this.targetHome);
-    log.info("Run directory: {}", this.runDirectory);
-    log.info("Initialization data directory: {}", this.initDataDir);
+      log.info("Target system directory: {}", this.targetHome);
+      log.info("Run directory: {}", this.runDirectory);
+      log.info("Initialization data directory: {}", this.initDataDir);
+
+    } catch (IOException e) {
+      log.error("Cannot initialize workload directories.");
+      e.printStackTrace();
+      System.exit(-1);
+    }
+
   }
 
   public Path nodeHome(int nodeId, String... paths) {
