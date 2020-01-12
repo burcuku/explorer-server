@@ -13,7 +13,7 @@ def main(numtests):
         #startB = time.time()
 
         seed = i + 12345678
-        #call("mvn {0} {1} {2}".format("exec:java", "-Dexec.mainClass=explorer.ServerMain", "-Dexec.args=\"seed %s\" " % str(seed)), shell=True)
+        #call("mvn {0} {1} {2}".format("exec:java", "-Dexec.mainClass=explorer.SystemRunner", "-Dexec.args=\"seed %s\" " % str(seed)), shell=True)
 
         #endB = time.time()
         #elapsedSec = endB - startB
@@ -38,7 +38,7 @@ def main(numtests):
             print("Running mutation %s" % mutationNo)
             mutation = line.rstrip('\n')
             #print mutation
-            call("mvn {0} {1} {2}".format("exec:java", "-Dexec.mainClass=explorer.ServerMain", "-Dexec.args=\"seed {0} failures {1}\"".format(str(seed), mutation)), shell=True)
+            call("mvn {0} {1} {2}".format("exec:java", "-Dexec.mainClass=explorer.SystemRunner", "-Dexec.args=\"seed {0} failures {1}\"".format(str(seed), mutation)), shell=True)
             mutationNo = mutationNo + 1
 
     endM = time.time()

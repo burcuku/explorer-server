@@ -10,7 +10,9 @@ import java.util.HashMap;
 import com.datastax.driver.core.*;
 import com.datastax.driver.core.policies.RoundRobinPolicy;
 import com.datastax.driver.core.policies.WhiteListPolicy;
+import explorer.ExplorerConf;
 import org.apache.log4j.BasicConfigurator;
+import utils.FileUtils;
 
 public class CassVerifier  {
   //private static final Logger LOG = LoggerFactory.getLogger(CassVerifier.class);
@@ -41,15 +43,11 @@ public class CassVerifier  {
       System.out.println("Value1: " + value_1 + "    Value2: " + value_2);
       if (value_1.equals("A") && (value_2.equals("B"))) {
         System.out.println("Reproduced the bug.");
-/*
-        try {
-          FileWriter fw = new FileWriter("result.txt", true);
-          PrintWriter pw = new PrintWriter(fw);
-          pw.println("Reproduced the bug.");
-          pw.close();
-        } catch (IOException e) {
-          e.printStackTrace();
-        }*/
+
+        if(ExplorerConf.getInstance().logResult) {
+            FileUtils.writeToFile(ExplorerConf.getInstance().resultFile, "Reproduced the bug.", true);
+        }
+
         return false;
       }
     } catch (Exception e) {

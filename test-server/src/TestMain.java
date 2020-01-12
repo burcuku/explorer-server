@@ -1,5 +1,4 @@
-package explorer;
-
+import explorer.ExplorerConf;
 import testAPI.OnlineTestDriver;
 import testAPI.TestDriver;
 import explorer.scheduler.FailureInjectingSettings;
@@ -12,7 +11,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-
+/**
+ * This file provides examples for writing fault-tolerance tests for Cassandra:
+ * In the method "onlineFailuresForBuggyScenario", the user specifies where to introduce faults online during execution
+ * In the method "offlineFailuresForBuggyScenario", the user can specify the faults to be introduced before the execution
+ *    (or can provide a seed for randomly introducing faults in the execution)
+ */
 public class TestMain {
 
     String query1 = "UPDATE tests SET value_1 = 'A' WHERE name = 'testing' IF owner = 'user_1'";
@@ -57,8 +61,6 @@ public class TestMain {
 
         test.waitUntilCompletion();  // returns control here when the execution is completed
 
-        // write to results file
-        //FileUtils.writeToFile("result.txt", test.getSchedule());
         new CassVerifier().verify();
 
         test.stopCluster();
@@ -82,9 +84,6 @@ public class TestMain {
         test.submitQueries(Arrays.asList(0, 1, 2), Arrays.asList(query1, query2, query3));
 
         test.waitUntilCompletion();  // returns control here when the execution is completed
-
-        // write to results file
-        //FileUtils.writeToFile("result.txt", test.getSchedule());
         new CassVerifier().verify();
 
         test.stopCluster();

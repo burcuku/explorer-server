@@ -45,6 +45,12 @@ public class ExplorerConf {
   public final int readTimeoutMillis;
   public final int timeBetweenQueriesMillis;
 
+  // Logging configurations
+  public final boolean logResult;
+  public final String resultFile;
+
+  public final int maxExecutionDuration;
+
   private ExplorerConf(String configFile, String[] args) {
     Properties prop = loadProperties(configFile);
     Map<String, String> overrideArgs = new HashMap();
@@ -82,6 +88,12 @@ public class ExplorerConf {
     poolTimeoutMillis = Integer.parseInt(prop.getProperty("poolTimeoutMillis"));
     readTimeoutMillis = Integer.parseInt(prop.getProperty("readTimeoutMillis"));
     timeBetweenQueriesMillis = Integer.parseInt(prop.getProperty("timeBetweenQueriesMillis"));
+
+    // Read logging parameters
+    logResult = Boolean.parseBoolean(prop.getProperty("logResult"));
+    resultFile = prop.getProperty("resultFile");
+
+    maxExecutionDuration = Integer.parseInt(prop.getProperty("maxExecutionDuration"));
   }
 
   public WorkloadDirs getWorkloadDirs() {

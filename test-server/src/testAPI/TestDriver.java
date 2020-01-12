@@ -55,7 +55,7 @@ public class TestDriver {
         workloadDriver.cleanup();  // delete existing runtime directories for the Cassandra nodes
         workloadDriver.prepare(1); // prepare runtime directories
 
-        setMaxTestDuration(30000); // can be overwritten by user
+        setMaxTestDuration(conf.maxExecutionDuration); // can be overwritten by user
     }
 
     public void startCluster() {
@@ -99,8 +99,8 @@ public class TestDriver {
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
-                System.out.println("Shutting down");
-                FileUtils.writeToFile("result.txt", "timed out - shutting down", true);
+                System.out.println("Timed out - Shutting down");
+                FileUtils.writeToFile(ExplorerConf.getInstance().resultFile, "Timed out - shutting down", true);
                 System.exit(-1);
             }
         });

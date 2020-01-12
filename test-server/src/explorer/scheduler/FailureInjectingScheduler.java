@@ -4,6 +4,7 @@ import explorer.ExplorerConf;
 import explorer.PaxosEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import utils.FileUtils;
 
 import java.util.*;
 
@@ -50,10 +51,14 @@ public class FailureInjectingScheduler extends Scheduler {
 
     if(settings.equals(FailureInjectingSettings.ONLINE_CONTROLLED)) {
       log.debug("Using online control of the failing nodes.");
+      if(ExplorerConf.getInstance().logResult)
+        FileUtils.writeToFile(ExplorerConf.getInstance().resultFile, "Using online control of the failing nodes.", true);
       online = true;
       suspended = true;
     } else {
       log.debug("Using failures: " + settings.getFailures() + " seed: " + settings.seed);
+      if(ExplorerConf.getInstance().logResult)
+        FileUtils.writeToFile(ExplorerConf.getInstance().resultFile, "Using seed for failures: " + settings.seed, true);
       online = false;
       suspended = false;
     }
