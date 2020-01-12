@@ -80,6 +80,14 @@ public class TestDriver {
         scheduler.setOnExecutionCompleted(r);
     }
 
+    public void sleep(int millis) {
+        try {
+            Thread.sleep(millis);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
     public void waitUntilCompletion() {
         while(!scheduler.isExecutionCompleted())
         {

@@ -233,7 +233,7 @@ public class FailureInjectingScheduler extends Scheduler {
     }
   }
 
-  int runUntilRound = -1;
+  int runUntilRound = 0;
 
   public void runUntilRound(int i) {
     if(currentRound >= i) {
@@ -249,6 +249,28 @@ public class FailureInjectingScheduler extends Scheduler {
     try {
       synchronized (o) {
         while(currentRound < i)
+          o.wait();  // blocks until the round is reached and the runnable is executed (Failures to inject are set)
+      }
+    } catch (InterruptedException e) {
+      e.printStackTrace();
+    }
+
+  }
+
+  public void runForRounds(int numRounds) {
+    if(numRounds <= 0) {
+      log.error("Cannot run for " + numRounds + "rounds. Is scheduler suspended ? " + suspended);
+      return;
+    }
+    runUntilRound = currentRound + numRounds;// blocks until the round is reached and the runnable is executed (Failures to inject are set)
+    suspended = false;
+
+    Thread t = new Thread(() -> checkForSchedule());
+    t.start();
+
+    try {
+      synchronized (o) {
+        while(currentRound < runUntilRound) // expected to call by a single test method/thread
           o.wait();  // blocks until the round is reached and the runnable is executed (Failures to inject are set)
       }
     } catch (InterruptedException e) {

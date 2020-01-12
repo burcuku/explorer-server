@@ -161,5 +161,7 @@ public abstract class Scheduler {
 
   public abstract void runUntilRound(int i);
 
+  public abstract void runForRounds(int numRounds);
+
   public abstract void runToCompletion();
 }

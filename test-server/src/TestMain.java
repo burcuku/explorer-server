@@ -23,10 +23,54 @@ public class TestMain {
     String query2 = "UPDATE tests SET value_1 = 'B', value_2 = 'B' WHERE name = 'testing' IF  value_1 = 'A'";
     String query3 = "UPDATE tests SET value_3 = 'C' WHERE name = 'testing' IF owner = 'user_1'";
 
-    public void onlineFailuresForBuggyScenario() throws Exception {
+    public void onlineFailuresForBuggyScenario() {
         OnlineTestDriver test = new OnlineTestDriver();
         test.startCluster();
-        Thread.sleep(4000);
+        test.sleep(4000);
+
+        // send workload
+        test.submitQuery(0, query1);
+
+        test.runForRounds(4); // around 2169 msec
+        test.failNode(2);
+
+        // send workload
+        test.submitQuery(1, query2);
+
+        test.runForRounds(2); // around 127 msec
+        test.resumeNode(2);
+
+        test.runForRounds(2); // around 201 msec
+        test.failNode(2);
+
+        test.runForRounds(2); // around 137 msec
+        test.failNode(0);
+
+        // send workload
+        test.submitQuery(2, query3);
+
+        test.runForRounds(2); // around 99 msec
+        test.resumeNode(2);
+        test.failNode(0);
+        test.failNode(1);
+
+        test.runForRounds(2); // around 217 msec
+        test.resumeNode(1);
+
+        test.runToCompletion();
+
+        test.waitUntilCompletion();  // returns control here when the execution is completed // around 10140 msec
+
+        new CassVerifier().verify();
+
+        test.stopCluster();
+        test.tearDown();
+    }
+
+    public void onlineFailuresWithRoundNumbers()  {
+        OnlineTestDriver test = new OnlineTestDriver();
+        test.startCluster();
+        test.sleep(4000);
 
         // send workload
         test.submitQuery(0, query1);
@@ -94,10 +138,10 @@ public class TestMain {
         BasicConfigurator.configure();
         Logger.getRootLogger().setLevel(Level.INFO);
         ExplorerConf.initialize("explorer.conf", null);
-
+        
         TestMain tm = new TestMain();
-        //tm.onlineFailuresForBuggyScenario();
-        tm.offlineFailuresForBuggyScenario();
+        tm.onlineFailuresForBuggyScenario();
+        //tm.offlineFailuresForBuggyScenario();
     }
 
 }

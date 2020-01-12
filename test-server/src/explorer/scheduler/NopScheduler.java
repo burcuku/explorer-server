@@ -41,6 +41,11 @@ public class NopScheduler extends Scheduler {
   }
 
   @Override
+  public void runForRounds(int numRounds) {
+    throw new NotImplementedException();
+  }
+
+  @Override
   public void runToCompletion() {
 
   }

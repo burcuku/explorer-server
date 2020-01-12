@@ -78,7 +78,7 @@
                     </descriptorRefs>
                     <archive>
                         <manifest>
-                            <mainClass>explorer.SystemRunner</mainClass>
+                            <mainClass>TestMain</mainClass>
                         </manifest>
                     </archive>
                 </configuration>
