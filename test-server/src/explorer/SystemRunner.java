@@ -119,6 +119,7 @@ public class SystemRunner {
         {
             Thread.sleep(250);
         }
+        FileUtils.writeToFile(conf.resultFile, scheduler.getStats(), true);
         new CassVerifier().verify();
         workloadDriver.stopEnsemble();
         Thread.sleep(1000);

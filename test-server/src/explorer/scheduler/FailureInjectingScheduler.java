@@ -37,6 +37,9 @@ public class FailureInjectingScheduler extends Scheduler {
   boolean suspended;
   final boolean online;
 
+  // for stats:
+  int numSuccessfulRounds = 0, numSuccessfulPhases = 0;
+
   public FailureInjectingScheduler(FailureInjectingSettings settings) {
     this.settings = settings;
     failures = new ArrayList<>(settings.getFailures());
@@ -134,6 +137,7 @@ public class FailureInjectingScheduler extends Scheduler {
   synchronized private void checkUpdateRound() {
     if((toExecuteInCurRound - executedInCurRound) == 0) { // move to next round
       currentRound ++;
+      if(executedInCurRound >= ((FailureInjectingSettings)settings).NUM_MAJORITY) numSuccessfulRounds ++;
 
       // inform coverage strategy
       coverageStrategy.onRoundComplete(rounds.get(currentRound-1).toString(), failedProcesses);
@@ -209,6 +213,7 @@ public class FailureInjectingScheduler extends Scheduler {
   // refreshes the set of failed processes after each unsuccessful round
   synchronized void moveToNextPhase() {
     currentPhase ++;
+    if(executedInCurRound >= ((FailureInjectingSettings)settings).NUM_MAJORITY) numSuccessfulPhases ++;
 
     // reset the quorum of nodes if
     // the settings are not assigned online AND
@@ -306,4 +311,18 @@ public class FailureInjectingScheduler extends Scheduler {
     suspended = false;
     checkForSchedule();
   }
+
+  @Override
+  public String getStats() {
+    StringBuffer sb = new StringBuffer();
+    sb.append("Num successful rounds: ").append(numSuccessfulRounds).append("\n");
+    sb.append("Num rounds: ").append(currentRound).append("\n");
+    sb.append("Num successful phases: ").append(numSuccessfulPhases).append("\n");
+    sb.append("Num phases: ").append(currentPhase).append("\n");
+    sb.append("Num messages: ").append(scheduled.size()).append("\n");
+    sb.append("\n");
+    return sb.toString();
+  }
+
+
 }

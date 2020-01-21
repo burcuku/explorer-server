@@ -42,4 +42,9 @@ public class NopScheduler extends Scheduler {
   public void runToCompletion() {
     throw new RuntimeException("Not supported for this Scheduler: " + this.getClass().getName());
   }
+
+  @Override
+  public String getStats() {
+    return "";
+  }
 }

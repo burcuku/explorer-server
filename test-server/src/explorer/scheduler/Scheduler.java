@@ -17,7 +17,7 @@ import java.util.concurrent.LinkedBlockingDeque;
 
 public abstract class Scheduler {
   private static Logger log = LoggerFactory.getLogger(Scheduler.class);
-  SchedulerSettings settings;
+  protected SchedulerSettings settings;
 
   protected ConcurrentHashMap<Integer, MessageSender> messageSenders = new ConcurrentHashMap<Integer, MessageSender>(); //connectionId to sender
   protected ConcurrentHashMap<PaxosEvent, Integer> events = new ConcurrentHashMap<PaxosEvent, Integer>(); // event to message sender map
@@ -164,4 +164,6 @@ public abstract class Scheduler {
   public abstract void runForRounds(int numRounds);
 
   public abstract void runToCompletion();
+
+  public abstract String getStats();
 }
