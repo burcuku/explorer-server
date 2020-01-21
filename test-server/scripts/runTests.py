@@ -14,7 +14,7 @@ def main(numtests):
 
         seed = i + 12345678
         #seed = 12346496
-        call("mvn {0} {1} {2}".format("exec:java", "-Dexec.mainClass=explorer.SystemRunner", "-Dexec.args=\"randomSeed={0} linkEstablishmentPeriod={1}\" ".format(str(seed), str(88))), shell=True)
+        call("mvn {0} {1} {2}".format("exec:java", "-Dexec.mainClass=explorer.SystemRunner", "-Dexec.args=\"randomSeed={0} linkEstablishmentPeriod={1}\" ".format(str(seed), str(6))), shell=True)
 
         #endB = time.time()
         #elapsedSec = endB - startB
