@@ -25,37 +25,30 @@ import java.util.concurrent.*;
 /**
  * Runs Cassandra with the specifies scheduler and parameters
  * (Does not use TestDriver API which provides convenient methods for injecting faults via FailureInjectingScheduler)
+ *
+ * The arguments in the ExplorerConf can be overwritten by providing arguments:
+ * e.g. radnomSeed=12347265 numRoundsInProtocol=4
  */
 public class SystemRunner {
 
     public static void main(String[] args) throws Exception {
         BasicConfigurator.configure();
-        Logger.getRootLogger().setLevel(Level.INFO);
+        Logger.getRootLogger().setLevel(Level.DEBUG);
+
+        ExplorerConf conf = ExplorerConf.initialize("explorer.conf", args);
 
         List<String> options = Arrays.asList(args);
-        int seed = -1;
-        if(options.contains("seed")) {
-            try {
-                seed = Integer.parseInt(options.get(options.indexOf("seed") + 1));
-            } catch (Exception e) {
-                throw new RuntimeException("Invalid command line arguments.\n" + e.getMessage());
-            }
-        }
-
-        String failureSettingsJsonStr = "";
-
         if(options.contains("failures")) {
           try {
-            failureSettingsJsonStr =options.get(options.indexOf("failures") + 1);
+              String failureSettingsJsonStr = failureSettingsJsonStr =options.get(options.indexOf("failures") + 1);
+              runAll(conf, failureSettingsJsonStr);
           } catch (Exception e) {
             throw new RuntimeException("Invalid command line arguments.\n" + e.getMessage());
           }
         }
-
-        ExplorerConf conf = ExplorerConf.initialize("explorer.conf", args);
-        if(seed > 0) conf.setSeed(seed);
-
-        runAll(conf, failureSettingsJsonStr);
+        else {
+            runAll(conf, "");
+        }
     }
 
     public static void runAll(ExplorerConf conf, String failureSettingsJsonStr) throws Exception {
@@ -64,19 +57,21 @@ public class SystemRunner {
         SchedulerSettings settings = null;
         try {
             schedulerClass = (Class<? extends Scheduler>) Class.forName(conf.schedulerClass);
-            //todo read settings class from config file
-            if(failureSettingsJsonStr.equals(""))
-              settings = new FailureInjectingSettings(conf.getSeed());
+            if(failureSettingsJsonStr != null && !failureSettingsJsonStr.isEmpty())
+                settings = FailureInjectingSettings.toObject(failureSettingsJsonStr);
             else
-              settings = FailureInjectingSettings.toObject(failureSettingsJsonStr);
-            scheduler = schedulerClass.getConstructor(FailureInjectingSettings.class).newInstance(settings);
+                settings = new FailureInjectingSettings(conf.randomSeed);
             //System.out.println(settings.toJsonStr());
+            scheduler = schedulerClass.getConstructor(FailureInjectingSettings.class).newInstance(settings);
+            runAll(conf, scheduler);
         } catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException
             | InvocationTargetException | InstantiationException e) {
             e.printStackTrace();
             System.exit(-1);
         }
+    }
 
+    public static void runAll(ExplorerConf conf, Scheduler scheduler) throws Exception {
         //CoverageStrategy coverageStrategy = new LastCliquesStrategy();
         //scheduler.setCoverageStrategy(coverageStrategy);
 
@@ -106,19 +101,19 @@ public class SystemRunner {
         workloadDriver.sendWorkload();
 
 
-      Thread t = new Thread(new Runnable() {
-        public void run() {
-          try {
-            Thread.sleep(15000);
-          } catch (InterruptedException e) {
-            e.printStackTrace();
-          }
-          System.out.println("Shutting down");
-            FileUtils.writeToFile(ExplorerConf.getInstance().resultFile, "Timed out - shutting down", true);
-          System.exit(-1);
-        }
-      });
-      t.start();
+        Thread t = new Thread(new Runnable() {
+            public void run() {
+                try {
+                    Thread.sleep(ExplorerConf.getInstance().maxExecutionDuration);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                System.out.println("Shutting down");
+                FileUtils.writeToFile(ExplorerConf.getInstance().resultFile, "Timed out - shutting down", true);
+                System.exit(-1);
+            }
+        });
+        t.start();
 
         while(!scheduler.isExecutionCompleted())
         {

@@ -2,6 +2,8 @@ package explorer.scheduler;
 
 import com.google.gson.annotations.Expose;
 import explorer.ExplorerConf;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import utils.FileUtils;
 
 import java.util.ArrayList;
@@ -9,17 +11,17 @@ import java.util.List;
 import java.util.Random;
 
 public class FailureInjectingSettings extends SchedulerSettings {
+  private static final Logger log = LoggerFactory.getLogger(FailureInjectingSettings.class);
   ExplorerConf conf = ExplorerConf.getInstance();
 
   // derived from the parameters
-  public final int NUM_EXPECTED_EVENTS = conf.NUM_LIVENESS_ROUNDS * conf.NUM_PHASES * conf.NUM_PROCESSES;
   public final int NUM_MAJORITY= (conf.NUM_PROCESSES / 2) + 1;
 
   private Random random;
   public final int depth = conf.bugDepth;
 
   @Expose
-  public int seed = conf.getSeed();
+  public int seed = conf.randomSeed;
   @Expose
   private List<FailureInjectingSettings.NodeFailure> failures = new ArrayList<>();
   @Expose
@@ -32,7 +34,7 @@ public class FailureInjectingSettings extends SchedulerSettings {
 
   // to be used for deserialization (failures will be set)
   public FailureInjectingSettings() {
-    this(ExplorerConf.getInstance().getSeed());
+    this(ExplorerConf.getInstance().randomSeed);
   }
 
   // to be used for creation
@@ -41,6 +43,7 @@ public class FailureInjectingSettings extends SchedulerSettings {
     random = new Random(seed);
     failures = getRandomFailures();
     //failures = getFailuresToReproduceBug();
+    log.debug("Failure Injecting Settings: \n" + toString());
   }
 
   public FailureInjectingSettings(List<NodeFailure> failures) {
@@ -55,6 +58,10 @@ public class FailureInjectingSettings extends SchedulerSettings {
   }
 
 
+  /**
+   * Notused in the current version of the algorithm/tester
+   * @return mutated failure settings for another test
+   */
   @Override
   public SchedulerSettings mutate() {
     int failureToRemove = random.nextInt(failures.size());
@@ -78,12 +85,12 @@ public class FailureInjectingSettings extends SchedulerSettings {
     }
 
     int phaseToFailAt = random.nextInt(phases.size());
-    int roundToFailAt = random.nextInt(conf.NUM_LIVENESS_ROUNDS);
+    int roundToFailAt = random.nextInt(conf.NUM_ROUNDS_IN_PROTOCOL);
     int processToFail = random.nextInt(conf.NUM_PROCESSES);
 
     mutation.add(new NodeFailure(phaseToFailAt, roundToFailAt, processToFail));
 
-    return new FailureInjectingSettings(conf.getSeed(), mutation, ++numMutators);
+    return new FailureInjectingSettings(conf.randomSeed, mutation, ++numMutators);
   }
 
   private List<FailureInjectingSettings.NodeFailure> getRandomFailures() {
@@ -102,7 +109,7 @@ public class FailureInjectingSettings extends SchedulerSettings {
       if(failurePerPhase[phaseToFailAt] == conf.NUM_PROCESSES)
         phases.remove(phaseToFailAt);
 
-      int roundToFailAt = random.nextInt(conf.NUM_LIVENESS_ROUNDS);
+      int roundToFailAt = random.nextInt(conf.NUM_ROUNDS_IN_PROTOCOL);
       int processToFail = random.nextInt(conf.NUM_PROCESSES);
 
       f.add(new NodeFailure(phaseToFailAt, roundToFailAt, processToFail));
@@ -135,6 +142,19 @@ public class FailureInjectingSettings extends SchedulerSettings {
 
   public List<FailureInjectingSettings.NodeFailure> getFailures() {
     return failures;
+  }
+
+  public String toString() {
+    if(this.equals(FailureInjectingSettings.ONLINE_CONTROLLED))
+      return "Online Controlled Failure Settings";
+
+    StringBuffer sb = new StringBuffer();
+    sb.append("Num processes: ").append(conf.NUM_PROCESSES).append("\n");
+    sb.append("Num rounds in the protocol: ").append(conf.NUM_ROUNDS_IN_PROTOCOL).append("\n");
+    sb.append("Num requests/phases: ").append(conf.NUM_PHASES).append("\n");
+    sb.append("Random seed: ").append(conf.randomSeed).append("\n");
+    sb.append("Bug depth: ").append(conf.bugDepth).append("\n");
+    return sb.toString();
   }
 
   private List<FailureInjectingSettings.NodeFailure> getFailuresToReproduceBug() {

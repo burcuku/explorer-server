@@ -19,12 +19,11 @@ public class ExplorerConf {
   private static ExplorerConf INSTANCE;
 
   // parameters of the sampling algorithm
-  public final int NUM_PROCESSES = 3; // n
-  public final int NUM_LIVENESS_ROUNDS = 6; // l
-  public final int NUM_PHASES = 4;  // k
+  public final int NUM_PROCESSES;
+  public final int NUM_ROUNDS_IN_PROTOCOL;
+  public final int NUM_PHASES;
 
-  private int randomSeed;
-
+  public final int randomSeed;
   public final int bugDepth;
 
   public final int portNumber;
@@ -62,14 +61,18 @@ public class ExplorerConf {
               .collect(Collectors.toMap(kv -> kv.get(0), kv -> kv.get(1)));
     }
 
+    randomSeed =  Integer.parseInt(overrideArgs.getOrDefault("randomSeed", prop.getProperty("randomSeed")));
+    bugDepth =  Integer.parseInt(overrideArgs.getOrDefault("bugDepth", prop.getProperty("bugDepth")));
+
+    NUM_PROCESSES = Integer.parseInt(overrideArgs.getOrDefault("numProcesses", prop.getProperty("numProcesses")));
+    NUM_ROUNDS_IN_PROTOCOL = Integer.parseInt(overrideArgs.getOrDefault("numRoundsInProtocol", prop.getProperty("numRoundsInProtocol")));
+    NUM_PHASES = Integer.parseInt(overrideArgs.getOrDefault("numPhases", prop.getProperty("numPhases")));
+
     portNumber = Integer.parseInt(prop.getProperty("portNumber"));
     numberOfClients = Integer.parseInt(prop.getProperty("numberOfClients"));
 
     schedulerClass = prop.getProperty("scheduler");
     schedulerFile = prop.getProperty("scheduleFile");
-
-    randomSeed = Integer.parseInt(prop.getProperty("randomSeed"));
-    bugDepth = Integer.parseInt(prop.getProperty("bugDepth"));
 
     schedulerFileHasMsgContent = Boolean.parseBoolean(prop.getProperty("scheduleHasMsgContent"));
 
@@ -81,7 +84,6 @@ public class ExplorerConf {
     log.info("Using scheduler: " + schedulerClass);
     if(schedulerClass.equals("explorer.scheduler.ReplayingScheduler"))
       log.info("using file " + schedulerFile);
-
 
     // Read cluster parameters
     clusterPort = Integer.parseInt(prop.getProperty("clusterPort"));
@@ -122,11 +124,4 @@ public class ExplorerConf {
     return INSTANCE;
   }
 
-  public void setSeed(int seed) {
-    randomSeed = seed;
-  }
-
-  public int getSeed() {
-    return randomSeed;
-  }
 }

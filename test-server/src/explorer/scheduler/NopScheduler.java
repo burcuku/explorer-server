@@ -20,33 +20,26 @@ public class NopScheduler extends Scheduler {
 
   @Override
   public void failNode(int nodeId) {
-    throw new NotImplementedException();
+    throw new RuntimeException("Not supported for this Scheduler: " + this.getClass().getName());
   }
 
   @Override
   public void resumeNode(int nodeId) {
-    throw new NotImplementedException();
-  }
-
-
-  @Override
-  public synchronized void addNewEvent(int connectionId, PaxosEvent message) {
-    super.addNewEvent(connectionId, message);
-    schedule(message);
+    throw new RuntimeException("Not supported for this Scheduler: " + this.getClass().getName());
   }
 
   @Override
   public void runUntilRound(int i) {
-    throw new NotImplementedException();
+    throw new RuntimeException("Not supported for this Scheduler: " + this.getClass().getName());
   }
 
   @Override
   public void runForRounds(int numRounds) {
-    throw new NotImplementedException();
+    throw new RuntimeException("Not supported for this Scheduler: " + this.getClass().getName());
   }
 
   @Override
   public void runToCompletion() {
-
+    throw new RuntimeException("Not supported for this Scheduler: " + this.getClass().getName());
   }
 }

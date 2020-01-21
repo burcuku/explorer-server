@@ -23,6 +23,8 @@ public class FailureInjectingScheduler extends Scheduler {
   private int executedInCurRound;
   private int droppedFromNextRound; // incremented for the response events in case request events are dropped
 
+  private final int period;  // period of clearing failed processes (set to NUM_LIVENESS_ROUNDS)
+
   private List<FailureInjectingSettings.NodeFailure> failures;
   private Set<Integer> failedProcesses;
 
@@ -48,6 +50,8 @@ public class FailureInjectingScheduler extends Scheduler {
     toExecuteInCurRound = conf.NUM_PROCESSES;
     executedInCurRound = 0;
     droppedFromNextRound = 0;
+
+    period = conf.NUM_ROUNDS_IN_PROTOCOL;
 
     if(settings.equals(FailureInjectingSettings.ONLINE_CONTROLLED)) {
       log.debug("Using online control of the failing nodes.");
@@ -144,9 +148,7 @@ public class FailureInjectingScheduler extends Scheduler {
           if(toExecuteInCurRound < ((FailureInjectingSettings)settings).NUM_MAJORITY) {
             coverageStrategy.onRequestPhaseComplete(rounds.get(currentRound-1).toString(), failedProcesses);
             rounds.add(PaxosEvent.ProtocolRound.PAXOS_PREPARE);
-            currentPhase ++;
-            // reset the quorum of nodes if the settings are not assigned online
-            if(!online) failedProcesses.clear();
+            moveToNextPhase();
           }
           else rounds.add(PaxosEvent.ProtocolRound.PAXOS_PROPOSE);
           toExecuteInCurRound = conf.NUM_PROCESSES;
@@ -159,9 +161,7 @@ public class FailureInjectingScheduler extends Scheduler {
           if(toExecuteInCurRound < ((FailureInjectingSettings)settings).NUM_MAJORITY) {
             coverageStrategy.onRequestPhaseComplete(rounds.get(currentRound-1).toString(), failedProcesses);
             rounds.add(PaxosEvent.ProtocolRound.PAXOS_PREPARE);
-            currentPhase ++;
-            // reset the quorum of nodes if the settings are not assigned online
-            if(!online) failedProcesses.clear();
+            moveToNextPhase();
           }
           else rounds.add(PaxosEvent.ProtocolRound.PAXOS_COMMIT);
           toExecuteInCurRound = conf.NUM_PROCESSES;
@@ -174,9 +174,7 @@ public class FailureInjectingScheduler extends Scheduler {
           coverageStrategy.onRequestPhaseComplete(rounds.get(currentRound-1).toString(), failedProcesses);
           rounds.add(PaxosEvent.ProtocolRound.PAXOS_PREPARE);
           toExecuteInCurRound = conf.NUM_PROCESSES;
-          currentPhase ++;
-          // reset the quorum of nodes if the settings are not assigned online
-          if(!online) failedProcesses.clear();
+          moveToNextPhase();
           break;
         default:
           log.error("Invalid protocol state");
@@ -185,6 +183,9 @@ public class FailureInjectingScheduler extends Scheduler {
       // update values related to failures for the current round:
       executedInCurRound = 0;
       droppedFromNextRound = 0;
+
+      // reset failed processes after each period number of rounds
+      checkClearFailedProcesses();
 
       //log.debug("Moved to the next round: " + rounds.get(currentRound));
       // We moved to next round, notify the clients and update failure structures with requested settings
@@ -195,6 +196,20 @@ public class FailureInjectingScheduler extends Scheduler {
         }
       }
     }
+  }
+
+
+
+  // reset failed processes after each period number of rounds
+  synchronized void checkClearFailedProcesses() {
+    if((currentRound + 1) % period == 0)
+      failedProcesses.clear();
+  }
+
+  synchronized void moveToNextPhase() {
+    currentPhase ++;
+    // reset the quorum of nodes if the settings are not assigned online
+    if(!online) failedProcesses.clear();
   }
 
   // Customized for Cassandra example - the default way of detecting the messages in a round is to collect messages for some timeout
