@@ -27,13 +27,13 @@ import java.util.concurrent.*;
  * (Does not use TestDriver API which provides convenient methods for injecting faults via FailureInjectingScheduler)
  *
  * The arguments in the ExplorerConf can be overwritten by providing arguments:
- * e.g. radnomSeed=12347265 numRoundsInProtocol=4
+ * e.g. radnomSeed=12347265 linkEstablishmentPeriod = 6
  */
 public class SystemRunner {
 
     public static void main(String[] args) throws Exception {
         BasicConfigurator.configure();
-        Logger.getRootLogger().setLevel(Level.DEBUG);
+        Logger.getRootLogger().setLevel(Level.INFO);
 
         ExplorerConf conf = ExplorerConf.initialize("explorer.conf", args);
 

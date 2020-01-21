@@ -51,7 +51,7 @@ public class FailureInjectingScheduler extends Scheduler {
     executedInCurRound = 0;
     droppedFromNextRound = 0;
 
-    period = conf.NUM_ROUNDS_IN_PROTOCOL;
+    period = conf.linkEstablishmentPeriod;
 
     if(settings.equals(FailureInjectingSettings.ONLINE_CONTROLLED)) {
       log.debug("Using online control of the failing nodes.");
@@ -62,7 +62,7 @@ public class FailureInjectingScheduler extends Scheduler {
     } else {
       log.debug("Using failures: " + settings.getFailures() + " seed: " + settings.seed);
       if(ExplorerConf.getInstance().logResult)
-        FileUtils.writeToFile(ExplorerConf.getInstance().resultFile, "Using seed for failures: " + settings.seed, true);
+        FileUtils.writeToFile(ExplorerConf.getInstance().resultFile, "Seed for failures: " + settings.seed, true);
       online = false;
       suspended = false;
     }
@@ -199,17 +199,24 @@ public class FailureInjectingScheduler extends Scheduler {
   }
 
 
-
-  // reset failed processes after each period number of rounds
   synchronized void checkClearFailedProcesses() {
-    if((currentRound + 1) % period == 0)
+    // reset failed processes after each period number of rounds if
+    // it does not get reset in moveToNextPhase (in the case when period == conf.NUM_ROUNDS_IN_PROTOCOL)
+    if(period != conf.NUM_ROUNDS_IN_PROTOCOL && (currentRound + 1) % period == 0)
       failedProcesses.clear();
   }
 
+  // refreshes the set of failed processes after each unsuccessful round
   synchronized void moveToNextPhase() {
     currentPhase ++;
-    // reset the quorum of nodes if the settings are not assigned online
-    if(!online) failedProcesses.clear();
+
+    // reset the quorum of nodes if
+    // the settings are not assigned online AND
+    // the reestablishment of the links correspond to the actual number of rounds in a phase
+    // (assumption: the completion of an unsuccessful phase (together with its timeouts) corresponds to the full-length execution of a successful exec)
+    // timeout-based scheduler will reestablish links in period number of rounds * expected time
+    // this Cassandra-specific implementation is aware of the phase executions and optimizes/increases accuracy using this info
+    if(!online && period == conf.NUM_ROUNDS_IN_PROTOCOL) failedProcesses.clear();
   }
 
   // Customized for Cassandra example - the default way of detecting the messages in a round is to collect messages for some timeout

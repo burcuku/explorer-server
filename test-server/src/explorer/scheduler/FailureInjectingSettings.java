@@ -2,6 +2,7 @@ package explorer.scheduler;
 
 import com.google.gson.annotations.Expose;
 import explorer.ExplorerConf;
+import javafx.util.converter.ByteStringConverter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import utils.FileUtils;
@@ -43,7 +44,8 @@ public class FailureInjectingSettings extends SchedulerSettings {
     random = new Random(seed);
     failures = getRandomFailures();
     //failures = getFailuresToReproduceBug();
-    log.debug("Failure Injecting Settings: \n" + toString());
+    String failuresAsStr = toString();
+    log.info("Failure Injecting Settings: \n" + failuresAsStr);
   }
 
   public FailureInjectingSettings(List<NodeFailure> failures) {
@@ -152,6 +154,7 @@ public class FailureInjectingSettings extends SchedulerSettings {
     sb.append("Num processes: ").append(conf.NUM_PROCESSES).append("\n");
     sb.append("Num rounds in the protocol: ").append(conf.NUM_ROUNDS_IN_PROTOCOL).append("\n");
     sb.append("Num requests/phases: ").append(conf.NUM_PHASES).append("\n");
+    sb.append("Link establishment period: ").append(conf.linkEstablishmentPeriod).append("\n");
     sb.append("Random seed: ").append(conf.randomSeed).append("\n");
     sb.append("Bug depth: ").append(conf.bugDepth).append("\n");
     return sb.toString();

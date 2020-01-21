@@ -137,11 +137,11 @@ public class TestMain {
     public static void main(String[] args) throws Exception {
         BasicConfigurator.configure();
         Logger.getRootLogger().setLevel(Level.INFO);
-        ExplorerConf.initialize("explorer.conf", null);
+        ExplorerConf.initialize("explorer.conf", args);
         
         TestMain tm = new TestMain();
-        tm.onlineFailuresForBuggyScenario();
-        //tm.offlineFailuresForBuggyScenario();
+        //tm.onlineFailuresForBuggyScenario();
+        tm.offlineFailuresForBuggyScenario();
     }
 
 }

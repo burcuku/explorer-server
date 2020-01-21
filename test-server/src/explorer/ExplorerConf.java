@@ -25,6 +25,7 @@ public class ExplorerConf {
 
   public final int randomSeed;
   public final int bugDepth;
+  public final int linkEstablishmentPeriod;
 
   public final int portNumber;
   public final int numberOfClients;
@@ -63,6 +64,7 @@ public class ExplorerConf {
 
     randomSeed =  Integer.parseInt(overrideArgs.getOrDefault("randomSeed", prop.getProperty("randomSeed")));
     bugDepth =  Integer.parseInt(overrideArgs.getOrDefault("bugDepth", prop.getProperty("bugDepth")));
+    linkEstablishmentPeriod =  Integer.parseInt(overrideArgs.getOrDefault("linkEstablishmentPeriod", prop.getProperty("linkEstablishmentPeriod")));
 
     NUM_PROCESSES = Integer.parseInt(overrideArgs.getOrDefault("numProcesses", prop.getProperty("numProcesses")));
     NUM_ROUNDS_IN_PROTOCOL = Integer.parseInt(overrideArgs.getOrDefault("numRoundsInProtocol", prop.getProperty("numRoundsInProtocol")));
@@ -93,7 +95,11 @@ public class ExplorerConf {
 
     // Read logging parameters
     logResult = Boolean.parseBoolean(prop.getProperty("logResult"));
-    resultFile = prop.getProperty("resultFile");
+    String[] schedulerFullPath = schedulerClass.split(".");
+    if(schedulerFullPath.length > 0)
+      resultFile = prop.getProperty("resultFile").concat(schedulerFullPath[schedulerFullPath.length-1]).concat("period" + linkEstablishmentPeriod).concat("d" + bugDepth);
+    else
+      resultFile = prop.getProperty("resultFile").concat("Period" + linkEstablishmentPeriod).concat("D" + bugDepth);
 
     maxExecutionDuration = Integer.parseInt(prop.getProperty("maxExecutionDuration"));
   }
