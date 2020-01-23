@@ -70,13 +70,13 @@ public class ExplorerConf {
     NUM_ROUNDS_IN_PROTOCOL = Integer.parseInt(overrideArgs.getOrDefault("numRoundsInProtocol", prop.getProperty("numRoundsInProtocol")));
     NUM_PHASES = Integer.parseInt(overrideArgs.getOrDefault("numPhases", prop.getProperty("numPhases")));
 
-    portNumber = Integer.parseInt(prop.getProperty("portNumber"));
-    numberOfClients = Integer.parseInt(prop.getProperty("numberOfClients"));
+    portNumber = Integer.parseInt(overrideArgs.getOrDefault("portNumber", prop.getProperty("portNumber")));
+    numberOfClients = Integer.parseInt(overrideArgs.getOrDefault("numberOfClients",prop.getProperty("numberOfClients")));
 
-    schedulerClass = prop.getProperty("scheduler");
-    schedulerFile = prop.getProperty("scheduleFile");
+    schedulerClass = overrideArgs.getOrDefault("scheduler", prop.getProperty("scheduler"));
+    schedulerFile = overrideArgs.getOrDefault("schedulerFile", prop.getProperty("scheduleFile"));
 
-    schedulerFileHasMsgContent = Boolean.parseBoolean(prop.getProperty("scheduleHasMsgContent"));
+    schedulerFileHasMsgContent = Boolean.parseBoolean(overrideArgs.getOrDefault("schedulerFileHasMsgContent", prop.getProperty("scheduleHasMsgContent")));
 
     targetDirectory = overrideArgs.getOrDefault("targetDirectory", prop.getProperty("targetDirectory"));
     initialDataDirectory = overrideArgs.getOrDefault("initialDataDirectory", prop.getProperty("initialDataDirectory"));
@@ -88,20 +88,22 @@ public class ExplorerConf {
       log.info("using file " + schedulerFile);
 
     // Read cluster parameters
-    clusterPort = Integer.parseInt(prop.getProperty("clusterPort"));
-    poolTimeoutMillis = Integer.parseInt(prop.getProperty("poolTimeoutMillis"));
-    readTimeoutMillis = Integer.parseInt(prop.getProperty("readTimeoutMillis"));
-    timeBetweenQueriesMillis = Integer.parseInt(prop.getProperty("timeBetweenQueriesMillis"));
+    clusterPort = Integer.parseInt(overrideArgs.getOrDefault("clusterPort", prop.getProperty("clusterPort")));
+    poolTimeoutMillis = Integer.parseInt(overrideArgs.getOrDefault("poolTimeoutMillis", prop.getProperty("poolTimeoutMillis")));
+    readTimeoutMillis = Integer.parseInt(overrideArgs.getOrDefault("readTimeoutMillis", prop.getProperty("readTimeoutMillis")));
+    timeBetweenQueriesMillis = Integer.parseInt(overrideArgs.getOrDefault("timeBetweenQueriesMillis", prop.getProperty("timeBetweenQueriesMillis")));
 
     // Read logging parameters
-    logResult = Boolean.parseBoolean(prop.getProperty("logResult"));
+    logResult = Boolean.parseBoolean(overrideArgs.getOrDefault("logResult", prop.getProperty("logResult")));
     String[] schedulerFullPath = schedulerClass.split(".");
     if(schedulerFullPath.length > 0)
-      resultFile = prop.getProperty("resultFile").concat(schedulerFullPath[schedulerFullPath.length-1]).concat("period" + linkEstablishmentPeriod).concat("d" + bugDepth);
+      resultFile = overrideArgs.getOrDefault("resultFile",
+              prop.getProperty("resultFile").concat(schedulerFullPath[schedulerFullPath.length-1]).concat("period" + linkEstablishmentPeriod).concat("d" + bugDepth));
     else
-      resultFile = prop.getProperty("resultFile").concat("Period" + linkEstablishmentPeriod).concat("D" + bugDepth);
+      resultFile = overrideArgs.getOrDefault("resultFile",
+              prop.getProperty("resultFile").concat("Period" + linkEstablishmentPeriod).concat("D" + bugDepth));
 
-    maxExecutionDuration = Integer.parseInt(prop.getProperty("maxExecutionDuration"));
+    maxExecutionDuration = Integer.parseInt(overrideArgs.getOrDefault("maxExecutionDuration", prop.getProperty("maxExecutionDuration")));
   }
 
   public WorkloadDirs getWorkloadDirs() {

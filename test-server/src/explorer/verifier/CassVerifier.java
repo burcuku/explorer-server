@@ -1,36 +1,19 @@
 package explorer.verifier;
 
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.net.InetSocketAddress;
-import java.util.Collections;
 import java.util.Map;
 import java.util.HashMap;
 import com.datastax.driver.core.*;
-import com.datastax.driver.core.policies.RoundRobinPolicy;
-import com.datastax.driver.core.policies.WhiteListPolicy;
 import explorer.ExplorerConf;
-import org.apache.log4j.BasicConfigurator;
 import utils.FileUtils;
 
 public class CassVerifier  {
-  //private static final Logger LOG = LoggerFactory.getLogger(CassVerifier.class);
-
   private Map<String, String> map = new HashMap<String, String>();
 
   private String value_1;
   private String value_2;
 
   public boolean verify() {
-    // causes redundant logging when configured multiple times!
-    //BasicConfigurator.configure();
-
-    boolean result = true;
-    if (!checkDataConsistency()) {
-      result = false;
-    }
-    return result;
+    return checkDataConsistency();
   }
 
   private boolean checkDataConsistency() {

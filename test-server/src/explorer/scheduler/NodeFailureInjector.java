@@ -312,6 +312,9 @@ public class NodeFailureInjector extends Scheduler {
     checkForSchedule();
   }
 
+  public String getFailuresAsStr() {
+    return ((NodeFailureSettings)settings).getFailuresAsStr();
+  }
   @Override
   public String getStats() {
     StringBuffer sb = new StringBuffer();

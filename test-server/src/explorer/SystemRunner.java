@@ -3,10 +3,7 @@ package explorer;
 import explorer.net.Handler;
 import explorer.net.TestingServer;
 import explorer.net.socket.SocketServer;
-import explorer.scheduler.LinkFailureSettings;
-import explorer.scheduler.NodeFailureSettings;
-import explorer.scheduler.Scheduler;
-import explorer.scheduler.SchedulerSettings;
+import explorer.scheduler.*;
 import explorer.verifier.CassVerifier;
 import explorer.workload.CassWorkloadDriver;
 import explorer.workload.WorkloadDriver;
@@ -62,14 +59,15 @@ public class SystemRunner {
                         settings = new NodeFailureSettings(conf.randomSeed);
                     //System.out.println(settings.toJsonStr());
                     scheduler = schedulerClass.getConstructor(NodeFailureSettings.class).newInstance(settings);
-
+                    break;
                 case "explorer.scheduler.LinkFailureInjector":
                     if(failureSettingsJsonStr != null && !failureSettingsJsonStr.isEmpty())
-                        settings = NodeFailureSettings.toObject(failureSettingsJsonStr);
+                        settings = LinkFailureSettings.toObject(failureSettingsJsonStr);
                     else
                         settings = new LinkFailureSettings(conf.randomSeed);
                     //System.out.println(settings.toJsonStr());
                     scheduler = schedulerClass.getConstructor(LinkFailureSettings.class).newInstance(settings);
+                    break;
             }
 
             runAll(conf, scheduler);
@@ -130,7 +128,10 @@ public class SystemRunner {
             Thread.sleep(250);
         }
         FileUtils.writeToFile(conf.resultFile, scheduler.getStats(), true);
-        new CassVerifier().verify();
+        if(!new CassVerifier().verify()) {
+            if(scheduler instanceof NodeFailureInjector)
+                FileUtils.writeToFile(ExplorerConf.getInstance().resultFile, "Failures: " + ((NodeFailureInjector)scheduler).getFailuresAsStr(), true);
+        }
         workloadDriver.stopEnsemble();
         Thread.sleep(1000);
         t.stop();
