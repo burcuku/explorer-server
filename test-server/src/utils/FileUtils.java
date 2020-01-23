@@ -1,6 +1,5 @@
 package utils;
 
-import explorer.scheduler.FailureInjectingScheduler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

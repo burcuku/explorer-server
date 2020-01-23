@@ -2,7 +2,6 @@ package explorer.scheduler;
 
 import com.google.gson.annotations.Expose;
 import explorer.ExplorerConf;
-import javafx.util.converter.ByteStringConverter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import utils.FileUtils;
@@ -11,8 +10,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-public class FailureInjectingSettings extends SchedulerSettings {
-  private static final Logger log = LoggerFactory.getLogger(FailureInjectingSettings.class);
+public class NodeFailureSettings extends SchedulerSettings {
+  private static final Logger log = LoggerFactory.getLogger(NodeFailureSettings.class);
   ExplorerConf conf = ExplorerConf.getInstance();
 
   // derived from the parameters
@@ -24,22 +23,22 @@ public class FailureInjectingSettings extends SchedulerSettings {
   @Expose
   public int seed = conf.randomSeed;
   @Expose
-  private List<FailureInjectingSettings.NodeFailure> failures = new ArrayList<>();
+  private List<NodeFailureSettings.NodeFailure> failures = new ArrayList<>();
   @Expose
   public int mutationNo = 0; // the mutations of the same seed are enumerated for logging
 
   private int numMutators = 0;
 
   // does not introduce any failures prior to execution, failures introduced during runtime
-  public static FailureInjectingSettings ONLINE_CONTROLLED = new FailureInjectingSettings(new ArrayList<>());
+  public static NodeFailureSettings ONLINE_CONTROLLED = new NodeFailureSettings(new ArrayList<>());
 
   // to be used for deserialization (failures will be set)
-  public FailureInjectingSettings() {
+  public NodeFailureSettings() {
     this(ExplorerConf.getInstance().randomSeed);
   }
 
   // to be used for creation
-  public FailureInjectingSettings(int seed) {
+  public NodeFailureSettings(int seed) {
     this.seed = seed;
     random = new Random(seed);
     failures = getRandomFailures();
@@ -48,12 +47,12 @@ public class FailureInjectingSettings extends SchedulerSettings {
     log.info("Failure Injecting Settings: \n" + failuresAsStr);
   }
 
-  public FailureInjectingSettings(List<NodeFailure> failures) {
+  public NodeFailureSettings(List<NodeFailure> failures) {
     this.failures = failures;
   }
 
   // constructor used when constructed from a mutation - written as json for next executions
-  private FailureInjectingSettings(int seed, List<NodeFailure> failures, int mutationNo) {
+  private NodeFailureSettings(int seed, List<NodeFailure> failures, int mutationNo) {
     random = new Random(seed);
     this.mutationNo = mutationNo;
     this.failures = failures;
@@ -61,7 +60,7 @@ public class FailureInjectingSettings extends SchedulerSettings {
 
 
   /**
-   * Notused in the current version of the algorithm/tester
+   * Not used in the current version of the algorithm/tester
    * @return mutated failure settings for another test
    */
   @Override
@@ -92,11 +91,11 @@ public class FailureInjectingSettings extends SchedulerSettings {
 
     mutation.add(new NodeFailure(phaseToFailAt, roundToFailAt, processToFail));
 
-    return new FailureInjectingSettings(conf.randomSeed, mutation, ++numMutators);
+    return new NodeFailureSettings(conf.randomSeed, mutation, ++numMutators);
   }
 
-  private List<FailureInjectingSettings.NodeFailure> getRandomFailures() {
-    List<FailureInjectingSettings.NodeFailure> f  = new ArrayList<>();
+  private List<NodeFailureSettings.NodeFailure> getRandomFailures() {
+    List<NodeFailureSettings.NodeFailure> f  = new ArrayList<>();
 
     int[] failurePerPhase = new int[conf.NUM_PHASES];
     List<Integer> phases = new ArrayList<>();
@@ -120,14 +119,14 @@ public class FailureInjectingSettings extends SchedulerSettings {
     return f;
   }
 
-  private List<FailureInjectingSettings.NodeFailure> getMutationFailures() {
+  private List<NodeFailureSettings.NodeFailure> getMutationFailures() {
     // read mutations file
     List<String> mutationStrs = FileUtils.readLinesFromFile("mutations");
-    List<FailureInjectingSettings.NodeFailure> failuresToExecute = new ArrayList<>();
+    List<NodeFailureSettings.NodeFailure> failuresToExecute = new ArrayList<>();
 
     if(mutationStrs.size() > 0) {
       // take the first mutation to execute
-      failuresToExecute = ((FailureInjectingSettings)toObject(mutationStrs.get(0))).getFailures();
+      failuresToExecute = ((NodeFailureSettings)toObject(mutationStrs.get(0))).getFailures();
 
       // write back the rest
       //todo revise with a more efficient way
@@ -142,12 +141,12 @@ public class FailureInjectingSettings extends SchedulerSettings {
     return failuresToExecute;
   }
 
-  public List<FailureInjectingSettings.NodeFailure> getFailures() {
+  public List<NodeFailureSettings.NodeFailure> getFailures() {
     return failures;
   }
 
   public String toString() {
-    if(this.equals(FailureInjectingSettings.ONLINE_CONTROLLED))
+    if(this.equals(NodeFailureSettings.ONLINE_CONTROLLED))
       return "Online Controlled Failure Settings";
 
     StringBuffer sb = new StringBuffer();
@@ -160,9 +159,9 @@ public class FailureInjectingSettings extends SchedulerSettings {
     return sb.toString();
   }
 
-  private List<FailureInjectingSettings.NodeFailure> getFailuresToReproduceBug() {
+  private List<NodeFailureSettings.NodeFailure> getFailuresToReproduceBug() {
     // depth is 6
-    List<FailureInjectingSettings.NodeFailure> f  = new ArrayList<>();
+    List<NodeFailureSettings.NodeFailure> f  = new ArrayList<>();
     f.add(new NodeFailure(0, 4, 2));
     f.add(new NodeFailure(1, 2, 2));
     f.add(new NodeFailure(1, 4, 0));

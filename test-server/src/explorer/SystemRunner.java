@@ -1,11 +1,10 @@
 package explorer;
 
-import explorer.coverage.CoverageStrategy;
-import explorer.coverage.LastCliquesStrategy;
 import explorer.net.Handler;
 import explorer.net.TestingServer;
 import explorer.net.socket.SocketServer;
-import explorer.scheduler.FailureInjectingSettings;
+import explorer.scheduler.LinkFailureSettings;
+import explorer.scheduler.NodeFailureSettings;
 import explorer.scheduler.Scheduler;
 import explorer.scheduler.SchedulerSettings;
 import explorer.verifier.CassVerifier;
@@ -18,9 +17,7 @@ import utils.FileUtils;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
-import java.util.concurrent.*;
 
 /**
  * Runs Cassandra with the specifies scheduler and parameters
@@ -33,37 +30,50 @@ public class SystemRunner {
 
     public static void main(String[] args) throws Exception {
         BasicConfigurator.configure();
-        Logger.getRootLogger().setLevel(Level.INFO);
+        Logger.getRootLogger().setLevel(Level.DEBUG);
 
         ExplorerConf conf = ExplorerConf.initialize("explorer.conf", args);
 
+        String failureSettingsJsonStr = "";
         List<String> options = Arrays.asList(args);
         if(options.contains("failures")) {
           try {
-              String failureSettingsJsonStr = failureSettingsJsonStr =options.get(options.indexOf("failures") + 1);
-              runAll(conf, failureSettingsJsonStr);
+              failureSettingsJsonStr = failureSettingsJsonStr =options.get(options.indexOf("failures") + 1);
+
           } catch (Exception e) {
             throw new RuntimeException("Invalid command line arguments.\n" + e.getMessage());
           }
         }
-        else {
-            runAll(conf, "");
-        }
+
+        runAll(conf, failureSettingsJsonStr);
     }
 
     public static void runAll(ExplorerConf conf, String failureSettingsJsonStr) throws Exception {
-        Class<? extends Scheduler> schedulerClass = null;
-        Scheduler scheduler = null;
-        SchedulerSettings settings = null;
         try {
-            schedulerClass = (Class<? extends Scheduler>) Class.forName(conf.schedulerClass);
-            if(failureSettingsJsonStr != null && !failureSettingsJsonStr.isEmpty())
-                settings = FailureInjectingSettings.toObject(failureSettingsJsonStr);
-            else
-                settings = new FailureInjectingSettings(conf.randomSeed);
-            //System.out.println(settings.toJsonStr());
-            scheduler = schedulerClass.getConstructor(FailureInjectingSettings.class).newInstance(settings);
+            Scheduler scheduler = null;
+            SchedulerSettings settings = null;
+            Class<? extends Scheduler> schedulerClass = (Class<? extends Scheduler>) Class.forName(conf.schedulerClass);
+
+            switch(conf.schedulerClass) {
+                case "explorer.scheduler.NodeFailureInjector":
+                    if(failureSettingsJsonStr != null && !failureSettingsJsonStr.isEmpty())
+                        settings = NodeFailureSettings.toObject(failureSettingsJsonStr);
+                    else
+                        settings = new NodeFailureSettings(conf.randomSeed);
+                    //System.out.println(settings.toJsonStr());
+                    scheduler = schedulerClass.getConstructor(NodeFailureSettings.class).newInstance(settings);
+
+                case "explorer.scheduler.LinkFailureInjector":
+                    if(failureSettingsJsonStr != null && !failureSettingsJsonStr.isEmpty())
+                        settings = NodeFailureSettings.toObject(failureSettingsJsonStr);
+                    else
+                        settings = new LinkFailureSettings(conf.randomSeed);
+                    //System.out.println(settings.toJsonStr());
+                    scheduler = schedulerClass.getConstructor(LinkFailureSettings.class).newInstance(settings);
+            }
+
             runAll(conf, scheduler);
+
         } catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException
             | InvocationTargetException | InstantiationException e) {
             e.printStackTrace();

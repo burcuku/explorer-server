@@ -16,7 +16,7 @@ public abstract class SchedulerSettings {
   public abstract SchedulerSettings mutate();
 
   public static String toJsonStr(SchedulerSettings obj) {
-    if(obj instanceof  FailureInjectingSettings) {
+    if(obj instanceof NodeFailureSettings) {
       Gson gson = new GsonBuilder()
           .excludeFieldsWithoutExposeAnnotation()
           .create();
@@ -32,6 +32,6 @@ public abstract class SchedulerSettings {
     Gson gson = new GsonBuilder()
         .excludeFieldsWithoutExposeAnnotation()
         .create();
-    return gson.fromJson(json, FailureInjectingSettings.class);
+    return gson.fromJson(json, NodeFailureSettings.class);
   }
 }

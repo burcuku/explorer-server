@@ -1,6 +1,6 @@
 package explorer.coverage;
 
-import explorer.scheduler.FailureInjectingSettings;
+import explorer.scheduler.NodeFailureSettings;
 import utils.FileUtils;
 
 import java.util.*;
@@ -11,7 +11,7 @@ public class LastCliqueProcessor extends CoverageProcessor {
   public final int MIN_FREQ; // if a coverage trace is samples less than this, add mutations
 
   private Map<LastCliquesStrategy.LastCliques, Integer> cliques = new HashMap<>();
-  private Map<LastCliquesStrategy.LastCliques, FailureInjectingSettings> failures = new HashMap<>();
+  private Map<LastCliquesStrategy.LastCliques, NodeFailureSettings> failures = new HashMap<>();
 
   public LastCliqueProcessor(int minFreq, int numMutations) {
     MIN_FREQ = minFreq;
@@ -33,7 +33,7 @@ public class LastCliqueProcessor extends CoverageProcessor {
         cliques.put(clqs,1);
 
       String failuresLine = lines.next();
-      FailureInjectingSettings fs = (FailureInjectingSettings) FailureInjectingSettings.toObject(failuresLine);
+      NodeFailureSettings fs = (NodeFailureSettings) NodeFailureSettings.toObject(failuresLine);
       failures.put(clqs, fs);
     }
   }
@@ -42,19 +42,19 @@ public class LastCliqueProcessor extends CoverageProcessor {
     for(LastCliquesStrategy.LastCliques clique: cliques.keySet()) {
 
       if(cliques.get(clique) < MIN_FREQ) {
-        List<FailureInjectingSettings> mutations = mutate(failures.get(clique), NUM_MUTATIONS);
-        for(FailureInjectingSettings mutation: mutations)
-          FileUtils.writeToFile(outFileMutations, FailureInjectingSettings.toJsonStr(mutation), true);
+        List<NodeFailureSettings> mutations = mutate(failures.get(clique), NUM_MUTATIONS);
+        for(NodeFailureSettings mutation: mutations)
+          FileUtils.writeToFile(outFileMutations, NodeFailureSettings.toJsonStr(mutation), true);
       }
 
     }
   }
 
-  private List<FailureInjectingSettings> mutate(FailureInjectingSettings failure, int numMutations) {
-    List<FailureInjectingSettings> mutations = new ArrayList<>();
+  private List<NodeFailureSettings> mutate(NodeFailureSettings failure, int numMutations) {
+    List<NodeFailureSettings> mutations = new ArrayList<>();
 
     for(int i = 0; i < numMutations; i++) {
-      FailureInjectingSettings mutation = (FailureInjectingSettings) failure.mutate();
+      NodeFailureSettings mutation = (NodeFailureSettings) failure.mutate();
       mutations.add(mutation);
     }
 

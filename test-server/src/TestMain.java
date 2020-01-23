@@ -1,7 +1,7 @@
 import explorer.ExplorerConf;
 import testAPI.OnlineTestDriver;
 import testAPI.TestDriver;
-import explorer.scheduler.FailureInjectingSettings;
+import explorer.scheduler.NodeFailureSettings;
 import explorer.verifier.CassVerifier;
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Level;
@@ -112,15 +112,15 @@ public class TestMain {
     }
 
     public void offlineFailuresForBuggyScenario() throws Exception {
-        List<FailureInjectingSettings.NodeFailure> failures  = new ArrayList<>();
-        failures.add(new FailureInjectingSettings.NodeFailure(0, 4, 2));
-        failures.add(new FailureInjectingSettings.NodeFailure(1, 2, 2));
-        failures.add(new FailureInjectingSettings.NodeFailure(1, 4, 0));
-        failures.add(new FailureInjectingSettings.NodeFailure(2, 0, 0));
-        failures.add(new FailureInjectingSettings.NodeFailure(2, 0, 1));
-        failures.add(new FailureInjectingSettings.NodeFailure(3, 0, 0));
+        List<NodeFailureSettings.NodeFailure> failures  = new ArrayList<>();
+        failures.add(new NodeFailureSettings.NodeFailure(0, 4, 2));
+        failures.add(new NodeFailureSettings.NodeFailure(1, 2, 2));
+        failures.add(new NodeFailureSettings.NodeFailure(1, 4, 0));
+        failures.add(new NodeFailureSettings.NodeFailure(2, 0, 0));
+        failures.add(new NodeFailureSettings.NodeFailure(2, 0, 1));
+        failures.add(new NodeFailureSettings.NodeFailure(3, 0, 0));
 
-        TestDriver test = new TestDriver(new FailureInjectingSettings(failures)); // or seed
+        TestDriver test = new TestDriver(new NodeFailureSettings(failures)); // or seed
         test.startCluster();
         Thread.sleep(4000);
 

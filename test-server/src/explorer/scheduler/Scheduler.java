@@ -4,7 +4,6 @@ import explorer.coverage.CoverageStrategy;
 import explorer.coverage.NopStrategy;
 import explorer.net.MessageSender;
 import explorer.PaxosEvent;
-import explorer.verifier.CassVerifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -143,7 +142,7 @@ public abstract class Scheduler {
 
   private void onExecutionCompleted() {
     if(executionCompletedRunnable != null) executionCompletedRunnable.run();
-    coverageStrategy.onScheduleComplete(FailureInjectingSettings.toJsonStr(settings));
+    coverageStrategy.onScheduleComplete(NodeFailureSettings.toJsonStr(settings));
   }
 
   public String getScheduleAsStr() {

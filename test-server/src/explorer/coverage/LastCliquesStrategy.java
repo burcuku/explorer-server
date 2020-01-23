@@ -1,7 +1,7 @@
 package explorer.coverage;
 
 import com.google.gson.Gson;
-import explorer.scheduler.FailureInjectingScheduler;
+import explorer.scheduler.NodeFailureInjector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import utils.FileUtils;
@@ -9,7 +9,7 @@ import utils.FileUtils;
 import java.util.*;
 
 public class LastCliquesStrategy extends CoverageStrategy {
-  private static final Logger log = LoggerFactory.getLogger(FailureInjectingScheduler.class);
+  private static final Logger log = LoggerFactory.getLogger(NodeFailureInjector.class);
 
   private LastCliques current = new LastCliques();
 

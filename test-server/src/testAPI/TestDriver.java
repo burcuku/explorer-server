@@ -5,8 +5,8 @@ import explorer.ExplorerConf;
 import explorer.net.Handler;
 import explorer.net.TestingServer;
 import explorer.net.socket.SocketServer;
-import explorer.scheduler.FailureInjectingScheduler;
-import explorer.scheduler.FailureInjectingSettings;
+import explorer.scheduler.NodeFailureInjector;
+import explorer.scheduler.NodeFailureSettings;
 import explorer.scheduler.Scheduler;
 import explorer.workload.CassWorkloadDriver;
 import explorer.workload.WorkloadDriver;
@@ -22,13 +22,13 @@ public class TestDriver {
     Thread serverThread;
 
     public TestDriver(int randomSeed) {
-        this(ExplorerConf.getInstance(), new FailureInjectingScheduler(new FailureInjectingSettings(randomSeed)));
+        this(ExplorerConf.getInstance(), new NodeFailureInjector(new NodeFailureSettings(randomSeed)));
     }
 
-    public TestDriver(FailureInjectingSettings settings) {
-        this(ExplorerConf.initialize("explorer.conf", null), new FailureInjectingScheduler(settings));
+    public TestDriver(NodeFailureSettings settings) {
+        this(ExplorerConf.initialize("explorer.conf", null), new NodeFailureInjector(settings));
 
-        if(settings.equals(FailureInjectingSettings.ONLINE_CONTROLLED)) {
+        if(settings.equals(NodeFailureSettings.ONLINE_CONTROLLED)) {
             throw new IllegalArgumentException("Please use OnlineTestDriver for online control of failure injection.");
         }
     }

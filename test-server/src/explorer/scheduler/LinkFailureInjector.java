@@ -4,16 +4,15 @@ import explorer.ExplorerConf;
 import explorer.PaxosEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import utils.FileUtils;
 
 import java.util.*;
 
 /**
- * The FailureInjectingScheduler injects failures into the synchronous non-faulty executions of a system
- * (The current version introduces only node failures where a failing node cannot receive/send any messages)
+ * Injects random link failures (i.e., drops random messages) at each round
+ * Injects bugDepth number of failures (bugDepth = 7 reproduces the bug)
  */
-public class FailureInjectingScheduler extends Scheduler {
-  private static final Logger log = LoggerFactory.getLogger(FailureInjectingScheduler.class);
+public class LinkFailureInjector extends Scheduler {
+  private static final Logger log = LoggerFactory.getLogger(LinkFailureInjector.class);
   ExplorerConf conf = ExplorerConf.getInstance();
 
   // variables maintaining the current state of the protocol execution
@@ -23,28 +22,20 @@ public class FailureInjectingScheduler extends Scheduler {
   private int executedInCurRound;
   private int droppedFromNextRound; // incremented for the response events in case request events are dropped
 
-  private final int period;  // period of clearing failed processes (set to NUM_LIVENESS_ROUNDS)
-
-  private List<FailureInjectingSettings.NodeFailure> failures;
-  private Set<Integer> failedProcesses;
+  private List<LinkFailureSettings.LinkFailure> failures;
 
   private List<PaxosEvent.ProtocolRound> rounds;
   // not needed by the standard algorithm, used for optimization (eliminating timeouts for collecting the messages in a round) for Cassandra
   //private List<String> ballots = Arrays.asList("33d9f0f0-08c5-11e7-845e-", "33da1800-08c5-11e7-845e-", "33da3f10-08c5-11e7-845e-", "33da6620-08c5-11e7-845e-", "33da8d30-08c5-11e7-845e-");
   private List<String> ballots;
 
-  // used for online control of the schedule by the user
-  boolean suspended;
-  final boolean online;
-
   // for stats:
   int numSuccessfulRounds = 0, numSuccessfulPhases = 0;
 
-  public FailureInjectingScheduler(FailureInjectingSettings settings) {
+  public LinkFailureInjector(LinkFailureSettings settings) {
     this.settings = settings;
     failures = new ArrayList<>(settings.getFailures());
 
-    failedProcesses = new HashSet<>();
     ballots = new ArrayList<>();
     rounds = new ArrayList<>();
     rounds.add(PaxosEvent.ProtocolRound.PAXOS_PREPARE);
@@ -53,22 +44,6 @@ public class FailureInjectingScheduler extends Scheduler {
     toExecuteInCurRound = conf.NUM_PROCESSES;
     executedInCurRound = 0;
     droppedFromNextRound = 0;
-
-    period = conf.linkEstablishmentPeriod;
-
-    if(settings.equals(FailureInjectingSettings.ONLINE_CONTROLLED)) {
-      log.debug("Using online control of the failing nodes.");
-      if(ExplorerConf.getInstance().logResult)
-        FileUtils.writeToFile(ExplorerConf.getInstance().resultFile, "Using online control of the failing nodes.", true);
-      online = true;
-      suspended = true;
-    } else {
-      log.debug("Using failures: " + settings.getFailures() + " seed: " + settings.seed);
-      if(ExplorerConf.getInstance().logResult)
-        FileUtils.writeToFile(ExplorerConf.getInstance().resultFile, "Seed for failures: " + settings.seed, true);
-      online = false;
-      suspended = false;
-    }
   }
 
   @Override
@@ -80,7 +55,7 @@ public class FailureInjectingScheduler extends Scheduler {
       //log.debug("Added:  " + message.getBallot());
     }
 
-    if(!suspended) checkForSchedule();
+    checkForSchedule();
   }
 
   @Override
@@ -114,11 +89,11 @@ public class FailureInjectingScheduler extends Scheduler {
   synchronized private boolean isToDrop(PaxosEvent message) {
     assert(isOfCurrentRound(message));
     int processOfMessage = (int)(message.isRequest() ? message.getRecv() : message.getSender());
-    if(failedProcesses.contains(processOfMessage)) return true;
 
-    FailureInjectingSettings.NodeFailure match = null;
-    for(FailureInjectingSettings.NodeFailure nf: failures) {
-      if(nf.k == currentPhase && rounds.get(currentRound).ordinal() == nf.r && nf.process == processOfMessage) {
+    LinkFailureSettings.LinkFailure match = null;
+    for(LinkFailureSettings.LinkFailure nf: failures) {
+      if(nf.k == currentPhase && rounds.get(currentRound).ordinal() == nf.r
+              && nf.fromProcess == message.getSender() && nf.toProcess == message.getRecv() ) {
         match = nf;
         break;
       }
@@ -126,7 +101,6 @@ public class FailureInjectingScheduler extends Scheduler {
 
     if(match != null) {
       failures.remove(match);
-      failedProcesses.add(match.process);
       return true;
     }
 
@@ -137,10 +111,7 @@ public class FailureInjectingScheduler extends Scheduler {
   synchronized private void checkUpdateRound() {
     if((toExecuteInCurRound - executedInCurRound) == 0) { // move to next round
       currentRound ++;
-      if(executedInCurRound >= ((FailureInjectingSettings)settings).NUM_MAJORITY) numSuccessfulRounds ++;
-
-      // inform coverage strategy
-      coverageStrategy.onRoundComplete(rounds.get(currentRound-1).toString(), failedProcesses);
+      if(executedInCurRound >= ((LinkFailureSettings)settings).NUM_MAJORITY) numSuccessfulRounds ++;
 
       // update the next round - state machine
       switch(rounds.get(currentRound-1)) {
@@ -149,8 +120,7 @@ public class FailureInjectingScheduler extends Scheduler {
           toExecuteInCurRound = conf.NUM_PROCESSES - droppedFromNextRound;
           break;
         case PAXOS_PREPARE_RESPONSE:
-          if(toExecuteInCurRound < ((FailureInjectingSettings)settings).NUM_MAJORITY) {
-            coverageStrategy.onRequestPhaseComplete(rounds.get(currentRound-1).toString(), failedProcesses);
+          if(toExecuteInCurRound < ((LinkFailureSettings)settings).NUM_MAJORITY) {
             rounds.add(PaxosEvent.ProtocolRound.PAXOS_PREPARE);
             moveToNextPhase();
           }
@@ -162,8 +132,7 @@ public class FailureInjectingScheduler extends Scheduler {
           toExecuteInCurRound = conf.NUM_PROCESSES - droppedFromNextRound;
           break;
         case PAXOS_PROPOSE_RESPONSE: //todo make it more accurate with replies! (even with majority of replies can turn back to PREPARE)
-          if(toExecuteInCurRound < ((FailureInjectingSettings)settings).NUM_MAJORITY) {
-            coverageStrategy.onRequestPhaseComplete(rounds.get(currentRound-1).toString(), failedProcesses);
+          if(toExecuteInCurRound < ((LinkFailureSettings)settings).NUM_MAJORITY) {
             rounds.add(PaxosEvent.ProtocolRound.PAXOS_PREPARE);
             moveToNextPhase();
           }
@@ -175,7 +144,6 @@ public class FailureInjectingScheduler extends Scheduler {
           toExecuteInCurRound = conf.NUM_PROCESSES - droppedFromNextRound;
           break;
         case PAXOS_COMMIT_RESPONSE:
-          coverageStrategy.onRequestPhaseComplete(rounds.get(currentRound-1).toString(), failedProcesses);
           rounds.add(PaxosEvent.ProtocolRound.PAXOS_PREPARE);
           toExecuteInCurRound = conf.NUM_PROCESSES;
           moveToNextPhase();
@@ -188,40 +156,13 @@ public class FailureInjectingScheduler extends Scheduler {
       executedInCurRound = 0;
       droppedFromNextRound = 0;
 
-      // reset failed processes after each period number of rounds
-      checkClearFailedProcesses();
-
-      //log.debug("Moved to the next round: " + rounds.get(currentRound));
-      // We moved to next round, notify the clients and update failure structures with requested settings
-      if(online && runUntilRound == currentRound) {
-        suspended = true;
-        synchronized (o) {
-          o.notify();
-        }
-      }
     }
-  }
-
-
-  synchronized void checkClearFailedProcesses() {
-    // reset failed processes after each period number of rounds if
-    // it does not get reset in moveToNextPhase (in the case when period == conf.NUM_ROUNDS_IN_PROTOCOL)
-    if(period != conf.NUM_ROUNDS_IN_PROTOCOL && (currentRound + 1) % period == 0)
-      failedProcesses.clear();
   }
 
   // refreshes the set of failed processes after each unsuccessful round
   synchronized void moveToNextPhase() {
     currentPhase ++;
-    if(executedInCurRound >= ((FailureInjectingSettings)settings).NUM_MAJORITY) numSuccessfulPhases ++;
-
-    // reset the quorum of nodes if
-    // the settings are not assigned online AND
-    // the reestablishment of the links correspond to the actual number of rounds in a phase
-    // (assumption: the completion of an unsuccessful phase (together with its timeouts) corresponds to the full-length execution of a successful exec)
-    // timeout-based scheduler will reestablish links in period number of rounds * expected time
-    // this Cassandra-specific implementation is aware of the phase executions and optimizes/increases accuracy using this info
-    if(!online && period == conf.NUM_ROUNDS_IN_PROTOCOL) failedProcesses.clear();
+    if(executedInCurRound >= ((LinkFailureSettings)settings).NUM_MAJORITY) numSuccessfulPhases ++;
   }
 
   // Customized for Cassandra example - the default way of detecting the messages in a round is to collect messages for some timeout
@@ -242,74 +183,25 @@ public class FailureInjectingScheduler extends Scheduler {
     return scheduled.size() >= 36; // todo parametrize
   }
 
-  Object o = new Object(); // used for notification of the client
-
   public void failNode(int nodeId) {
-    if(nodeId >= conf.NUM_PROCESSES) {
-      log.error("Cannot fail node " + nodeId + ". No such node.");
-    } else {
-      failedProcesses.add(nodeId);
-    }
+    throw new RuntimeException("Not supported for this Scheduler: " + this.getClass().getName());
   }
 
   public void resumeNode(int nodeId) {
-    if(nodeId >= conf.NUM_PROCESSES) {
-      log.error("Cannot resume node " + nodeId + ". No such node.");
-    } else {
-      failedProcesses.remove(nodeId);
-    }
+    throw new RuntimeException("Not supported for this Scheduler: " + this.getClass().getName());
   }
 
-  int runUntilRound = 0;
-
   public void runUntilRound(int i) {
-    if(currentRound >= i) {
-      log.error("Round " + i + " has already been executed. Is scheduler suspended ? " + suspended);
-      return;
-    }
-    runUntilRound = i;// blocks until the round is reached and the runnable is executed (Failures to inject are set)
-    suspended = false;
-
-    Thread t = new Thread(() -> checkForSchedule());
-    t.start();
-
-    try {
-      synchronized (o) {
-        while(currentRound < i)
-          o.wait();  // blocks until the round is reached and the runnable is executed (Failures to inject are set)
-      }
-    } catch (InterruptedException e) {
-      e.printStackTrace();
-    }
-
+    throw new RuntimeException("Not supported for this Scheduler: " + this.getClass().getName());
   }
 
   public void runForRounds(int numRounds) {
-    if(numRounds <= 0) {
-      log.error("Cannot run for " + numRounds + "rounds. Is scheduler suspended ? " + suspended);
-      return;
-    }
-    runUntilRound = currentRound + numRounds;// blocks until the round is reached and the runnable is executed (Failures to inject are set)
-    suspended = false;
-
-    Thread t = new Thread(() -> checkForSchedule());
-    t.start();
-
-    try {
-      synchronized (o) {
-        while(currentRound < runUntilRound) // expected to call by a single test method/thread
-          o.wait();  // blocks until the round is reached and the runnable is executed (Failures to inject are set)
-      }
-    } catch (InterruptedException e) {
-      e.printStackTrace();
-    }
-
+    throw new RuntimeException("Not supported for this Scheduler: " + this.getClass().getName());
   }
 
   @Override
   public synchronized void runToCompletion() {
-    suspended = false;
-    checkForSchedule();
+    throw new RuntimeException("Not supported for this Scheduler: " + this.getClass().getName());
   }
 
   @Override
@@ -323,6 +215,4 @@ public class FailureInjectingScheduler extends Scheduler {
     sb.append("\n");
     return sb.toString();
   }
-
-
 }
