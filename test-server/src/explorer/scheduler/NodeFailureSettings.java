@@ -171,14 +171,6 @@ public class NodeFailureSettings extends SchedulerSettings {
     return f;
   }
 
-  public String getFailuresAsStr() {
-    StringBuffer sb = new StringBuffer();
-    for(NodeFailure nf: failures) {
-      sb.append("NF: " ).append(nf.toString());
-    }
-    return sb.append("\n").toString();
-  }
-
   public static class NodeFailure {
     @Expose
     int k; // in which request does it happen?
@@ -212,7 +204,7 @@ public class NodeFailureSettings extends SchedulerSettings {
     }
 
     public String toString() {
-      return "k:" + k + " r:" + r + " proc:" + process + "   ";
+      return "k:" + k + " r:" + r + " proc:" + process;
     }
   };
 

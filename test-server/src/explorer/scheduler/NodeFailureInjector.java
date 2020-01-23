@@ -24,6 +24,7 @@ public class NodeFailureInjector extends Scheduler {
   private int droppedFromNextRound; // incremented for the response events in case request events are dropped
 
   private final int period;  // period of clearing failed processes (set to NUM_LIVENESS_ROUNDS)
+  private int numTotalRounds; // the current number of effective rounds (together with the empty rounds with no quorums)
 
   private List<NodeFailureSettings.NodeFailure> failures;
   private Set<Integer> failedProcesses;
@@ -55,6 +56,7 @@ public class NodeFailureInjector extends Scheduler {
     droppedFromNextRound = 0;
 
     period = conf.linkEstablishmentPeriod;
+    numTotalRounds = 0;
 
     if(settings.equals(NodeFailureSettings.ONLINE_CONTROLLED)) {
       log.debug("Using online control of the failing nodes.");
@@ -137,6 +139,7 @@ public class NodeFailureInjector extends Scheduler {
   synchronized private void checkUpdateRound() {
     if((toExecuteInCurRound - executedInCurRound) == 0) { // move to next round
       currentRound ++;
+      numTotalRounds ++;
       if(executedInCurRound >= ((NodeFailureSettings)settings).NUM_MAJORITY) numSuccessfulRounds ++;
 
       // inform coverage strategy
@@ -152,7 +155,8 @@ public class NodeFailureInjector extends Scheduler {
           if(toExecuteInCurRound < ((NodeFailureSettings)settings).NUM_MAJORITY) {
             coverageStrategy.onRequestPhaseComplete(rounds.get(currentRound-1).toString(), failedProcesses);
             rounds.add(PaxosEvent.ProtocolRound.PAXOS_PREPARE);
-            moveToNextPhase();
+            numTotalRounds += 4; // empty rounds
+            currentPhase ++;
           }
           else rounds.add(PaxosEvent.ProtocolRound.PAXOS_PROPOSE);
           toExecuteInCurRound = conf.NUM_PROCESSES;
@@ -161,11 +165,12 @@ public class NodeFailureInjector extends Scheduler {
           rounds.add(PaxosEvent.ProtocolRound.PAXOS_PROPOSE_RESPONSE);
           toExecuteInCurRound = conf.NUM_PROCESSES - droppedFromNextRound;
           break;
-        case PAXOS_PROPOSE_RESPONSE: //todo make it more accurate with replies! (even with majority of replies can turn back to PREPARE)
+        case PAXOS_PROPOSE_RESPONSE: //todo make it more accurate with replies! (even with majority of replies, we can turn back to PREPARE)
           if(toExecuteInCurRound < ((NodeFailureSettings)settings).NUM_MAJORITY) {
             coverageStrategy.onRequestPhaseComplete(rounds.get(currentRound-1).toString(), failedProcesses);
             rounds.add(PaxosEvent.ProtocolRound.PAXOS_PREPARE);
-            moveToNextPhase();
+            numTotalRounds += 2; // empty rounds
+            currentPhase ++;
           }
           else rounds.add(PaxosEvent.ProtocolRound.PAXOS_COMMIT);
           toExecuteInCurRound = conf.NUM_PROCESSES;
@@ -173,12 +178,13 @@ public class NodeFailureInjector extends Scheduler {
         case PAXOS_COMMIT:
           rounds.add(PaxosEvent.ProtocolRound.PAXOS_COMMIT_RESPONSE);
           toExecuteInCurRound = conf.NUM_PROCESSES - droppedFromNextRound;
+          numSuccessfulPhases ++;
           break;
         case PAXOS_COMMIT_RESPONSE:
           coverageStrategy.onRequestPhaseComplete(rounds.get(currentRound-1).toString(), failedProcesses);
           rounds.add(PaxosEvent.ProtocolRound.PAXOS_PREPARE);
           toExecuteInCurRound = conf.NUM_PROCESSES;
-          moveToNextPhase();
+          currentPhase ++;
           break;
         default:
           log.error("Invalid protocol state");
@@ -188,8 +194,9 @@ public class NodeFailureInjector extends Scheduler {
       executedInCurRound = 0;
       droppedFromNextRound = 0;
 
-      // reset failed processes after each period number of rounds
-      checkClearFailedProcesses();
+      // reset the quorum after each period number of rounds
+      if(!online && numTotalRounds % period == 0)
+        failedProcesses.clear();
 
       //log.debug("Moved to the next round: " + rounds.get(currentRound));
       // We moved to next round, notify the clients and update failure structures with requested settings
@@ -200,28 +207,6 @@ public class NodeFailureInjector extends Scheduler {
         }
       }
     }
-  }
-
-
-  synchronized void checkClearFailedProcesses() {
-    // reset failed processes after each period number of rounds if
-    // it does not get reset in moveToNextPhase (in the case when period == conf.NUM_ROUNDS_IN_PROTOCOL)
-    if(period != conf.NUM_ROUNDS_IN_PROTOCOL && (currentRound + 1) % period == 0)
-      failedProcesses.clear();
-  }
-
-  // refreshes the set of failed processes after each unsuccessful round
-  synchronized void moveToNextPhase() {
-    currentPhase ++;
-    if(executedInCurRound >= ((NodeFailureSettings)settings).NUM_MAJORITY) numSuccessfulPhases ++;
-
-    // reset the quorum of nodes if
-    // the settings are not assigned online AND
-    // the reestablishment of the links correspond to the actual number of rounds in a phase
-    // (assumption: the completion of an unsuccessful phase (together with its timeouts) corresponds to the full-length execution of a successful exec)
-    // timeout-based scheduler will reestablish links in period number of rounds * expected time
-    // this Cassandra-specific implementation is aware of the phase executions and optimizes/increases accuracy using this info
-    if(!online && period == conf.NUM_ROUNDS_IN_PROTOCOL) failedProcesses.clear();
   }
 
   // Customized for Cassandra example - the default way of detecting the messages in a round is to collect messages for some timeout
@@ -313,8 +298,9 @@ public class NodeFailureInjector extends Scheduler {
   }
 
   public String getFailuresAsStr() {
-    return ((NodeFailureSettings)settings).getFailuresAsStr();
+    return ((NodeFailureSettings)settings).getFailures().toString();
   }
+
   @Override
   public String getStats() {
     StringBuffer sb = new StringBuffer();
@@ -323,7 +309,6 @@ public class NodeFailureInjector extends Scheduler {
     sb.append("Num successful phases: ").append(numSuccessfulPhases).append("\n");
     sb.append("Num phases: ").append(currentPhase).append("\n");
     sb.append("Num messages: ").append(scheduled.size()).append("\n");
-    sb.append("\n");
     return sb.toString();
   }
 

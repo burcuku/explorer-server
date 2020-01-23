@@ -21,7 +21,7 @@ import java.util.List;
  * (Does not use TestDriver API which provides convenient methods for injecting faults via FailureInjectingScheduler)
  *
  * The arguments in the ExplorerConf can be overwritten by providing arguments:
- * e.g. radnomSeed=12347265 linkEstablishmentPeriod = 6
+ * e.g. randomSeed=12347265 linkEstablishmentPeriod = 6
  */
 public class SystemRunner {
 
