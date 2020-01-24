@@ -21,7 +21,7 @@ def main(numTests, scheduler, period, depth):
 
         seed = i + 12345678
         #seed = 12346496
-        call("mvn {0} {1} {2}".format("exec:java", "-Dexec.mainClass=explorer.SystemRunner", "-Dexec.args=\"scheduler={0} randomSeed={1} linkEstablishmentPeriod={2} resultFile={3}\" ".format(scheduler, str(seed), str(period), resultFile)), shell=True)
+        call("mvn {0} {1} {2}".format("exec:java", "-Dexec.mainClass=explorer.SystemRunner", "-Dexec.args=\"scheduler={0} randomSeed={1} linkEstablishmentPeriod={2} resultFile={3} bugDepth={4}\" ".format(scheduler, str(seed), str(period), resultFile, depth)), shell=True)
 
         #endB = time.time()
         #elapsedSec = endB - startB

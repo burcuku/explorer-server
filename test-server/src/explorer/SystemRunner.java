@@ -27,7 +27,7 @@ public class SystemRunner {
 
     public static void main(String[] args) throws Exception {
         BasicConfigurator.configure();
-        Logger.getRootLogger().setLevel(Level.DEBUG);
+        Logger.getRootLogger().setLevel(Level.INFO);
 
         ExplorerConf conf = ExplorerConf.initialize("explorer.conf", args);
 
