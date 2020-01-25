@@ -118,6 +118,14 @@ public class PaxosEvent {
           " From: " + sender + " To: " + recv + " - " + verb;
   }
 
+  public boolean getResponse() {
+    if(verb.equals("PAXOS_PREPARE_RESPONSE") || verb.equals("PAXOS_PROPOSE_RESPONSE")) {
+      String r = payload.substring(payload.indexOf("response")+9, payload.indexOf("response")+13);
+      if(r.equals("fals")) return false;
+    }
+    return true;
+  }
+
   //todo put into PaxosEvent
   public static String getEventId(PaxosEvent message) {
     StringBuilder sb = new StringBuilder("Req-");
