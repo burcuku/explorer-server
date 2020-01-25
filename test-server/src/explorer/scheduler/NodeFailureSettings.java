@@ -95,6 +95,13 @@ public class NodeFailureSettings extends SchedulerSettings {
   }
 
   private List<NodeFailureSettings.NodeFailure> getRandomFailures() {
+    if(depth > 0 )
+      return getBoundedRandomFailures(depth);
+    else
+      return getUnboundedRandomFailures();
+  }
+
+  private List<NodeFailureSettings.NodeFailure> getBoundedRandomFailures(int d) {
     List<NodeFailureSettings.NodeFailure> f  = new ArrayList<>();
 
     int[] failurePerPhase = new int[conf.NUM_PHASES];
@@ -104,7 +111,7 @@ public class NodeFailureSettings extends SchedulerSettings {
       phases.add(i);
     }
 
-    for(int i = 0; i < depth; i++) {
+    for(int i = 0; i < d; i++) {
       int phaseToFailAt = random.nextInt(phases.size());
       failurePerPhase[phaseToFailAt] ++;
       if(failurePerPhase[phaseToFailAt] == conf.NUM_PROCESSES)
@@ -116,6 +123,21 @@ public class NodeFailureSettings extends SchedulerSettings {
       f.add(new NodeFailure(phaseToFailAt, roundToFailAt, processToFail));
     }
 
+    return f;
+  }
+
+  private List<NodeFailureSettings.NodeFailure> getUnboundedRandomFailures() {
+    List<NodeFailureSettings.NodeFailure> f  = new ArrayList<>();
+
+    // for each phase, select a set of processes to fail, at a selected round
+    for(int i = 0; i < conf.NUM_PHASES; i++) {
+      for(int j = 0; j < conf.NUM_PROCESSES; j++) {
+        if(random.nextDouble() > 0) {
+          int roundNum = random.nextInt(6);
+          f.add(new NodeFailure(i, roundNum, j));
+        }
+      }
+    }
     return f;
   }
 

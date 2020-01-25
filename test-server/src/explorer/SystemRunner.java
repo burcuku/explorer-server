@@ -82,6 +82,7 @@ public class SystemRunner {
     public static void runAll(ExplorerConf conf, Scheduler scheduler) throws Exception {
         //CoverageStrategy coverageStrategy = new LastCliquesStrategy();
         //scheduler.setCoverageStrategy(coverageStrategy);
+        Thread timer = setMaxExecutionTimer(ExplorerConf.getInstance().maxExecutionDuration);
 
         Handler handler = new ConnectionHandler(scheduler);
 
@@ -90,6 +91,8 @@ public class SystemRunner {
 
         Thread serverThread = new Thread(testingServer, "testing-server");
         serverThread.start();
+
+
 
         // start distributed system nodes and the workload
         WorkloadDriver workloadDriver = new CassWorkloadDriver(conf.getWorkloadDirs(), conf.numberOfClients, conf.javaPath);
@@ -105,23 +108,10 @@ public class SystemRunner {
         workloadDriver.startEnsemble();
         Thread.sleep(4000);
 
+
+
         // send workload
         workloadDriver.sendWorkload();
-
-
-        Thread t = new Thread(new Runnable() {
-            public void run() {
-                try {
-                    Thread.sleep(ExplorerConf.getInstance().maxExecutionDuration);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-                System.out.println("Shutting down");
-                FileUtils.writeToFile(ExplorerConf.getInstance().resultFile, "Timed out - shutting down", true);
-                System.exit(-1);
-            }
-        });
-        t.start();
 
         while(!scheduler.isExecutionCompleted())
         {
@@ -134,9 +124,26 @@ public class SystemRunner {
         }
         workloadDriver.stopEnsemble();
         Thread.sleep(1000);
-        t.stop();
+        timer.stop();
         testingServer.stop();
         serverThread.join();
+    }
+
+    public static Thread setMaxExecutionTimer(int msecs) {
+        Thread t = new Thread(new Runnable() {
+            public void run() {
+                try {
+                    Thread.sleep(msecs);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                System.out.println("Timeout reached - shutting down");
+                FileUtils.writeToFile(ExplorerConf.getInstance().resultFile, "Timed out - shutting down", true);
+                System.exit(-1);
+            }
+        });
+        t.start();
+        return t;
     }
 
 }
