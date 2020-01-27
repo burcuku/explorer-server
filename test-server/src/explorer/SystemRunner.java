@@ -68,6 +68,9 @@ public class SystemRunner {
                     //System.out.println(settings.toJsonStr());
                     scheduler = schedulerClass.getConstructor(LinkFailureSettings.class).newInstance(settings);
                     break;
+                case "explorer.scheduler.ReplayingScheduler":
+                    scheduler = schedulerClass.getConstructor(ExplorerConf.class).newInstance(conf);
+                    break;
             }
 
             runAll(conf, scheduler);
