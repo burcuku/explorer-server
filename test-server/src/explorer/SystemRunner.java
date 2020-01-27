@@ -107,6 +107,11 @@ public class SystemRunner {
                     FileUtils.writeToFile(ExplorerConf.getInstance().resultFile, "Failures: " + ((NodeFailureInjector)scheduler).getFailuresAsStr(), true);
             }
             workloadDriver.stopEnsemble();
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
             testingServer.stop();
         }));
 
