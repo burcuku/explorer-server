@@ -101,6 +101,11 @@ public class SystemRunner {
         WorkloadDriver workloadDriver = new CassWorkloadDriver(conf.getWorkloadDirs(), conf.numberOfClients, conf.javaPath);
 
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            FileUtils.writeToFile(conf.resultFile, scheduler.getStats(), true);
+            if(!new CassVerifier().verify()) {
+                if(scheduler instanceof NodeFailureInjector)
+                    FileUtils.writeToFile(ExplorerConf.getInstance().resultFile, "Failures: " + ((NodeFailureInjector)scheduler).getFailuresAsStr(), true);
+            }
             workloadDriver.stopEnsemble();
             testingServer.stop();
         }));
@@ -110,8 +115,6 @@ public class SystemRunner {
         workloadDriver.prepare(1);
         workloadDriver.startEnsemble();
         Thread.sleep(4000);
-
-
 
         // send workload
         workloadDriver.sendWorkload();

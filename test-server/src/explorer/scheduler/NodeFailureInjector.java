@@ -24,7 +24,6 @@ public class NodeFailureInjector extends Scheduler {
   private int droppedFromNextRound; // incremented for the response events in case request events are dropped
 
   private final int period;  // period of clearing failed processes (set to NUM_LIVENESS_ROUNDS)
-  private int numTotalRounds; // the current number of effective rounds (together with the empty rounds with no quorums)
 
   private List<NodeFailureSettings.NodeFailure> failures;
   private Set<Integer> failedProcesses;
@@ -143,42 +142,67 @@ public class NodeFailureInjector extends Scheduler {
       if(executedInCurRound >= ((NodeFailureSettings)settings).NUM_MAJORITY) numSuccessfulRounds ++;
 
       // inform coverage strategy
-      coverageStrategy.onRoundComplete(rounds.get(currentRound-1).toString(), failedProcesses);
+      //coverageStrategy.onRoundComplete(rounds.get(currentRound-1).toString(), failedProcesses);
 
       // update the next round - state machine
       switch(rounds.get(currentRound-1)) {
         case PAXOS_PREPARE:
-          rounds.add(PaxosEvent.ProtocolRound.PAXOS_PREPARE_RESPONSE);
-          toExecuteInCurRound = conf.NUM_PROCESSES - droppedFromNextRound;
+          if(toExecuteInCurRound == 0) {
+            coverageStrategy.onRequestPhaseComplete(rounds.get(currentRound-1).toString(), failedProcesses);
+            rounds.add(PaxosEvent.ProtocolRound.PAXOS_PREPARE);
+            numTotalRounds += 5;
+            currentPhase ++;
+            toExecuteInCurRound = conf.NUM_PROCESSES;
+          } else {
+            rounds.add(PaxosEvent.ProtocolRound.PAXOS_PREPARE_RESPONSE);
+            toExecuteInCurRound = conf.NUM_PROCESSES - droppedFromNextRound;
+          }
           break;
         case PAXOS_PREPARE_RESPONSE:
           if(toExecuteInCurRound < ((NodeFailureSettings)settings).NUM_MAJORITY) {
             coverageStrategy.onRequestPhaseComplete(rounds.get(currentRound-1).toString(), failedProcesses);
             rounds.add(PaxosEvent.ProtocolRound.PAXOS_PREPARE);
-            numTotalRounds += 4; // empty rounds
+            numTotalRounds += 4;
             currentPhase ++;
           }
           else rounds.add(PaxosEvent.ProtocolRound.PAXOS_PROPOSE);
           toExecuteInCurRound = conf.NUM_PROCESSES;
           break;
         case PAXOS_PROPOSE:
-          rounds.add(PaxosEvent.ProtocolRound.PAXOS_PROPOSE_RESPONSE);
-          toExecuteInCurRound = conf.NUM_PROCESSES - droppedFromNextRound;
+          if(toExecuteInCurRound == 0) {
+            coverageStrategy.onRequestPhaseComplete(rounds.get(currentRound-1).toString(), failedProcesses);
+            rounds.add(PaxosEvent.ProtocolRound.PAXOS_PREPARE);
+            numTotalRounds += 3;
+            currentPhase ++;
+            toExecuteInCurRound = conf.NUM_PROCESSES;
+          } else {
+            rounds.add(PaxosEvent.ProtocolRound.PAXOS_PROPOSE_RESPONSE);
+            toExecuteInCurRound = conf.NUM_PROCESSES - droppedFromNextRound;
+          }
           break;
         case PAXOS_PROPOSE_RESPONSE: //todo make it more accurate with replies! (even with majority of replies, we can turn back to PREPARE)
           if(toExecuteInCurRound < ((NodeFailureSettings)settings).NUM_MAJORITY) {
             coverageStrategy.onRequestPhaseComplete(rounds.get(currentRound-1).toString(), failedProcesses);
             rounds.add(PaxosEvent.ProtocolRound.PAXOS_PREPARE);
-            numTotalRounds += 2; // empty rounds
+            //numTotalRounds = Math.max(numTotalRounds+2, conf.NUM_MAX_ROUNDS); // empty rounds
+            numTotalRounds += 2;
             currentPhase ++;
           }
           else rounds.add(PaxosEvent.ProtocolRound.PAXOS_COMMIT);
           toExecuteInCurRound = conf.NUM_PROCESSES;
           break;
         case PAXOS_COMMIT:
-          rounds.add(PaxosEvent.ProtocolRound.PAXOS_COMMIT_RESPONSE);
-          toExecuteInCurRound = conf.NUM_PROCESSES - droppedFromNextRound;
-          numSuccessfulPhases ++;
+          if(toExecuteInCurRound == 0) {
+            coverageStrategy.onRequestPhaseComplete(rounds.get(currentRound-1).toString(), failedProcesses);
+            rounds.add(PaxosEvent.ProtocolRound.PAXOS_PREPARE);
+            numTotalRounds += 1;
+            currentPhase ++;
+            toExecuteInCurRound = conf.NUM_PROCESSES;
+          } else {
+            rounds.add(PaxosEvent.ProtocolRound.PAXOS_COMMIT_RESPONSE);
+            toExecuteInCurRound = conf.NUM_PROCESSES - droppedFromNextRound;
+            numSuccessfulPhases ++;
+          }
           break;
         case PAXOS_COMMIT_RESPONSE:
           coverageStrategy.onRequestPhaseComplete(rounds.get(currentRound-1).toString(), failedProcesses);
@@ -207,6 +231,11 @@ public class NodeFailureInjector extends Scheduler {
         }
       }
     }
+
+    if(numTotalRounds >= conf.NUM_MAX_ROUNDS) {
+      System.out.println("Max number of rounds is reached.");
+      System.exit(-1); // the shutdown hook runs the verifier and logs
+    }
   }
 
   // Customized for Cassandra example - the default way of detecting the messages in a round is to collect messages for some timeout
@@ -223,8 +252,7 @@ public class NodeFailureInjector extends Scheduler {
 
   @Override
   public boolean isScheduleCompleted() {
-    // NOTE: Execution goes beyond this if there are events to onFlight to deliver
-    return scheduled.size() >= 36; // todo parametrize
+    return false;  // the logic is inside scheduler.isExecutionCompleted()
   }
 
   Object o = new Object(); // used for notification of the client
@@ -305,10 +333,12 @@ public class NodeFailureInjector extends Scheduler {
   public String getStats() {
     StringBuffer sb = new StringBuffer();
     sb.append("Num successful rounds: ").append(numSuccessfulRounds).append("\n");
-    sb.append("Num rounds: ").append(currentRound).append("\n");
+    sb.append("Num rounds: ").append(numTotalRounds).append("\n");
     sb.append("Num successful phases: ").append(numSuccessfulPhases).append("\n");
     sb.append("Num phases: ").append(currentPhase).append("\n");
     sb.append("Num messages: ").append(scheduled.size()).append("\n");
+
+    if(conf.logSchedule) sb.append(getScheduleAsStr());
     return sb.toString();
   }
 

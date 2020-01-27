@@ -20,8 +20,10 @@ public class ExplorerConf {
 
   // parameters of the sampling algorithm
   public final int NUM_PROCESSES;
+  public final int NUM_MAX_ROUNDS;
   public final int NUM_ROUNDS_IN_PROTOCOL;
   public final int NUM_PHASES;
+  public final int NUM_REQUESTS;
 
   public final int randomSeed;
   public final int bugDepth;
@@ -48,6 +50,7 @@ public class ExplorerConf {
   // Logging configurations
   public final boolean logResult;
   public final String resultFile;
+  public final boolean logSchedule;
 
   public final int maxExecutionDuration;
 
@@ -67,8 +70,10 @@ public class ExplorerConf {
     linkEstablishmentPeriod =  Integer.parseInt(overrideArgs.getOrDefault("linkEstablishmentPeriod", prop.getProperty("linkEstablishmentPeriod")));
 
     NUM_PROCESSES = Integer.parseInt(overrideArgs.getOrDefault("numProcesses", prop.getProperty("numProcesses")));
+    NUM_MAX_ROUNDS = Integer.parseInt(overrideArgs.getOrDefault("numMaxRounds", prop.getProperty("numMaxRounds")));
     NUM_ROUNDS_IN_PROTOCOL = Integer.parseInt(overrideArgs.getOrDefault("numRoundsInProtocol", prop.getProperty("numRoundsInProtocol")));
     NUM_PHASES = Integer.parseInt(overrideArgs.getOrDefault("numPhases", prop.getProperty("numPhases")));
+    NUM_REQUESTS = Integer.parseInt(overrideArgs.getOrDefault("numRequests", prop.getProperty("numRequests")));
 
     portNumber = Integer.parseInt(overrideArgs.getOrDefault("portNumber", prop.getProperty("portNumber")));
     numberOfClients = Integer.parseInt(overrideArgs.getOrDefault("numberOfClients",prop.getProperty("numberOfClients")));
@@ -95,6 +100,8 @@ public class ExplorerConf {
 
     // Read logging parameters
     logResult = Boolean.parseBoolean(overrideArgs.getOrDefault("logResult", prop.getProperty("logResult")));
+    logSchedule = Boolean.parseBoolean(overrideArgs.getOrDefault("logSchedule", prop.getProperty("logSchedule")));
+
     String[] schedulerFullPath = schedulerClass.split(".");
     if(schedulerFullPath.length > 0)
       resultFile = overrideArgs.getOrDefault("resultFile",

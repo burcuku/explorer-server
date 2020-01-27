@@ -1,9 +1,11 @@
 package explorer.scheduler;
 
+import explorer.ExplorerConf;
 import explorer.coverage.CoverageStrategy;
 import explorer.coverage.NopStrategy;
 import explorer.net.MessageSender;
 import explorer.PaxosEvent;
+import explorer.verifier.CassVerifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,6 +24,9 @@ public abstract class Scheduler {
   protected ConcurrentHashMap<PaxosEvent, Integer> events = new ConcurrentHashMap<PaxosEvent, Integer>(); // event to message sender map
 
   protected ConcurrentLinkedQueue<PaxosEvent> scheduled = new ConcurrentLinkedQueue<>();
+
+  //todo clean later
+  protected int numTotalRounds; // the current number of effective rounds (together with the empty rounds with no quorums)
 
   // synchronize when the messages are done on the receiver side : <receiverId, the list of messages sent to it>
   // once the receiver is free (sends and ACK), allow the next message to be sent to it
@@ -108,14 +113,20 @@ public abstract class Scheduler {
 
   public abstract boolean isScheduleCompleted();
 
+  ExplorerConf conf = ExplorerConf.getInstance();
+
   public boolean isExecutionCompleted() {
-   if(isNumEventsBounded)
-     return isScheduleCompleted();
+    // executions that completed max number of rounds are completed
+    if(numTotalRounds > conf.NUM_MAX_ROUNDS) {
+      log.info("Hit the max number of rounds, returning.");
+      onExecutionCompleted();
+      return true;
+    }
 
-    if (!isScheduleCompleted()) return false;
-
+    // executions having onflight messages (with smaller than numMaxRounds rounds) OR
+    // that has not completed request phases are not completed
     for(Queue<PaxosEvent> queue: onFlightToReceiver.values()) {
-      if(!queue.isEmpty()) return false;
+      if(!queue.isEmpty() || numTotalRounds < conf.NUM_REQUESTS * conf.NUM_ROUNDS_IN_PROTOCOL) return false;
     }
 
     onExecutionCompleted();
@@ -131,18 +142,18 @@ public abstract class Scheduler {
   /*new Runnable() {
     @Override
     public void run() {
-      log.debug(getScheduleAsStr());
       new CassVerifier().verify();
     }
   };*/
+
 
   public void setOnExecutionCompleted(Runnable r) {
     executionCompletedRunnable = r;
   }
 
-  private void onExecutionCompleted() {
+  protected void onExecutionCompleted() {
     if(executionCompletedRunnable != null) executionCompletedRunnable.run();
-    coverageStrategy.onScheduleComplete(NodeFailureSettings.toJsonStr(settings));
+    //coverageStrategy.onScheduleComplete(NodeFailureSettings.toJsonStr(settings));
   }
 
   public String getScheduleAsStr() {
