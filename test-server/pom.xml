@@ -11,7 +11,7 @@
     <properties>
         <cassandra-driver.version>2.1.10</cassandra-driver.version>
         <slf4j.version>1.7.28</slf4j.version>
-        <netty.version>4.0.27.Final</netty.version>
+        <netty.version>4.1.45.Final</netty.version>
         <java.version>1.8</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
