@@ -116,9 +116,7 @@ public abstract class Scheduler {
   ExplorerConf conf = ExplorerConf.getInstance();
 
   public boolean isExecutionCompleted() {
-    // executions that completed max number of rounds are completed
-    if(numTotalRounds > conf.NUM_MAX_ROUNDS) {
-      log.info("Hit the max number of rounds, returning.");
+    if(isScheduleCompleted()) {
       onExecutionCompleted();
       return true;
     }
@@ -129,8 +127,8 @@ public abstract class Scheduler {
       if(!queue.isEmpty() || numTotalRounds < conf.NUM_REQUESTS * conf.NUM_ROUNDS_IN_PROTOCOL) return false;
     }
 
-    onExecutionCompleted();
-    return true;
+    //extra check?
+    return false;
   }
 
   public void setCoverageStrategy(CoverageStrategy c) {
@@ -139,13 +137,6 @@ public abstract class Scheduler {
 
 
   private Runnable executionCompletedRunnable = null;
-  /*new Runnable() {
-    @Override
-    public void run() {
-      new CassVerifier().verify();
-    }
-  };*/
-
 
   public void setOnExecutionCompleted(Runnable r) {
     executionCompletedRunnable = r;

@@ -17,7 +17,7 @@ public class NodeFailureInjector extends Scheduler {
   ExplorerConf conf = ExplorerConf.getInstance();
 
   // variables maintaining the current state of the protocol execution
-  private int currentRound;        // between 0 to (NUM_LIVENESS_ROUNDS-1)
+  private int currentRound;     // between 0 to (NUM_LIVENESS_ROUNDS-1)
   private int currentPhase;    // between 0 to (NUM_PHASES - 1)
   private int toExecuteInCurRound;
   private int executedInCurRound;
@@ -147,12 +147,10 @@ public class NodeFailureInjector extends Scheduler {
       // update the next round - state machine
       switch(rounds.get(currentRound-1)) {
         case PAXOS_PREPARE:
-          if(toExecuteInCurRound == 0) {
+          if(toExecuteInCurRound < ((NodeFailureSettings)settings).NUM_MAJORITY) {
             coverageStrategy.onRequestPhaseComplete(rounds.get(currentRound-1).toString(), failedProcesses);
-            rounds.add(PaxosEvent.ProtocolRound.PAXOS_PREPARE);
-            numTotalRounds += 5;
-            currentPhase ++;
-            toExecuteInCurRound = conf.NUM_PROCESSES;
+            rounds.add(PaxosEvent.ProtocolRound.PAXOS_PREPARE_RESPONSE);
+            toExecuteInCurRound = conf.NUM_PROCESSES - droppedFromNextRound;
           } else {
             rounds.add(PaxosEvent.ProtocolRound.PAXOS_PREPARE_RESPONSE);
             toExecuteInCurRound = conf.NUM_PROCESSES - droppedFromNextRound;
@@ -164,17 +162,17 @@ public class NodeFailureInjector extends Scheduler {
             rounds.add(PaxosEvent.ProtocolRound.PAXOS_PREPARE);
             numTotalRounds += 4;
             currentPhase ++;
-          }
-          else rounds.add(PaxosEvent.ProtocolRound.PAXOS_PROPOSE);
-          toExecuteInCurRound = conf.NUM_PROCESSES;
-          break;
-        case PAXOS_PROPOSE:
-          if(toExecuteInCurRound == 0) {
-            coverageStrategy.onRequestPhaseComplete(rounds.get(currentRound-1).toString(), failedProcesses);
-            rounds.add(PaxosEvent.ProtocolRound.PAXOS_PREPARE);
-            numTotalRounds += 3;
-            currentPhase ++;
             toExecuteInCurRound = conf.NUM_PROCESSES;
+          } else {
+            rounds.add(PaxosEvent.ProtocolRound.PAXOS_PROPOSE);
+            toExecuteInCurRound = conf.NUM_PROCESSES;
+          }
+          break;
+        case PAXOS_PROPOSE: //fixed:
+          if(toExecuteInCurRound < ((NodeFailureSettings)settings).NUM_MAJORITY) {
+            coverageStrategy.onRequestPhaseComplete(rounds.get(currentRound-1).toString(), failedProcesses);
+            rounds.add(PaxosEvent.ProtocolRound.PAXOS_PROPOSE_RESPONSE);
+            toExecuteInCurRound = conf.NUM_PROCESSES - droppedFromNextRound;
           } else {
             rounds.add(PaxosEvent.ProtocolRound.PAXOS_PROPOSE_RESPONSE);
             toExecuteInCurRound = conf.NUM_PROCESSES - droppedFromNextRound;
@@ -184,7 +182,6 @@ public class NodeFailureInjector extends Scheduler {
           if(toExecuteInCurRound < ((NodeFailureSettings)settings).NUM_MAJORITY) {
             coverageStrategy.onRequestPhaseComplete(rounds.get(currentRound-1).toString(), failedProcesses);
             rounds.add(PaxosEvent.ProtocolRound.PAXOS_PREPARE);
-            //numTotalRounds = Math.max(numTotalRounds+2, conf.NUM_MAX_ROUNDS); // empty rounds
             numTotalRounds += 2;
             currentPhase ++;
           }
@@ -192,12 +189,10 @@ public class NodeFailureInjector extends Scheduler {
           toExecuteInCurRound = conf.NUM_PROCESSES;
           break;
         case PAXOS_COMMIT:
-          if(toExecuteInCurRound == 0) {
+          if(toExecuteInCurRound < ((NodeFailureSettings)settings).NUM_MAJORITY) {
             coverageStrategy.onRequestPhaseComplete(rounds.get(currentRound-1).toString(), failedProcesses);
-            rounds.add(PaxosEvent.ProtocolRound.PAXOS_PREPARE);
-            numTotalRounds += 1;
-            currentPhase ++;
-            toExecuteInCurRound = conf.NUM_PROCESSES;
+            rounds.add(PaxosEvent.ProtocolRound.PAXOS_COMMIT_RESPONSE);
+            toExecuteInCurRound = conf.NUM_PROCESSES - droppedFromNextRound;
           } else {
             rounds.add(PaxosEvent.ProtocolRound.PAXOS_COMMIT_RESPONSE);
             toExecuteInCurRound = conf.NUM_PROCESSES - droppedFromNextRound;
@@ -231,11 +226,6 @@ public class NodeFailureInjector extends Scheduler {
         }
       }
     }
-
-    if(numTotalRounds >= conf.NUM_MAX_ROUNDS) {
-      System.out.println("Max number of rounds is reached.");
-      System.exit(-1); // the shutdown hook runs the verifier and logs
-    }
   }
 
   // Customized for Cassandra example - the default way of detecting the messages in a round is to collect messages for some timeout
@@ -252,7 +242,18 @@ public class NodeFailureInjector extends Scheduler {
 
   @Override
   public boolean isScheduleCompleted() {
-    return false;  // the logic is inside scheduler.isExecutionCompleted()
+    // executions that completed max number of rounds are completed
+    if(numTotalRounds >= conf.NUM_MAX_ROUNDS) {
+      log.info("Hit the max number of rounds, returning.");
+      return true;
+    }
+
+    if(numSuccessfulRounds == conf.NUM_REQUESTS) {
+      log.info("Hit the max number of rounds, returning.");
+      return true;
+    }
+
+    return false;
   }
 
   Object o = new Object(); // used for notification of the client

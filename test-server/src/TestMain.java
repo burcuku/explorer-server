@@ -62,6 +62,7 @@ public class TestMain {
         test.waitUntilCompletion();  // returns control here when the execution is completed // around 10140 msec
 
         new CassVerifier().verify();
+        test.logStats();
 
         test.stopCluster();
         test.tearDown();
@@ -106,6 +107,7 @@ public class TestMain {
         test.waitUntilCompletion();  // returns control here when the execution is completed
 
         new CassVerifier().verify();
+        test.logStats();
 
         test.stopCluster();
         test.tearDown();
@@ -130,6 +132,7 @@ public class TestMain {
         test.waitUntilCompletion();  // returns control here when the execution is completed
         new CassVerifier().verify();
 
+        test.logStats();
         test.stopCluster();
         test.tearDown();
     }
@@ -142,6 +145,7 @@ public class TestMain {
         TestMain tm = new TestMain();
         //tm.onlineFailuresForBuggyScenario();
         tm.offlineFailuresForBuggyScenario();
+        //tm.onlineFailuresWithRoundNumbers();
     }
 
 }

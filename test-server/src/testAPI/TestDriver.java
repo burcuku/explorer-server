@@ -115,6 +115,10 @@ public class TestDriver {
         t.start();
     }
 
+    public void logStats() {
+        FileUtils.writeToFile(ExplorerConf.getInstance().resultFile, scheduler.getStats(), true);
+    }
+
     public String getSchedule() {
         return scheduler.getScheduleAsStr();
     }
