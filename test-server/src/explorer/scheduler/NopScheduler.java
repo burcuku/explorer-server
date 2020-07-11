@@ -19,31 +19,6 @@ public class NopScheduler extends Scheduler {
   }
 
   @Override
-  public void failNode(int nodeId) {
-    throw new RuntimeException("Not supported for this Scheduler: " + this.getClass().getName());
-  }
-
-  @Override
-  public void resumeNode(int nodeId) {
-    throw new RuntimeException("Not supported for this Scheduler: " + this.getClass().getName());
-  }
-
-  @Override
-  public void runUntilRound(int i) {
-    throw new RuntimeException("Not supported for this Scheduler: " + this.getClass().getName());
-  }
-
-  @Override
-  public void runForRounds(int numRounds) {
-    throw new RuntimeException("Not supported for this Scheduler: " + this.getClass().getName());
-  }
-
-  @Override
-  public void runToCompletion() {
-    throw new RuntimeException("Not supported for this Scheduler: " + this.getClass().getName());
-  }
-
-  @Override
   public String getStats() {
     return "";
   }

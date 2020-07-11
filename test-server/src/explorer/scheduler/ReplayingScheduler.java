@@ -4,7 +4,6 @@ import explorer.ExplorerConf;
 import explorer.PaxosEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -98,31 +97,6 @@ public class ReplayingScheduler extends Scheduler {
 
   public boolean isScheduleCompleted() {
     return scheduled.size() == scheduleToReplay.size();
-  }
-
-  @Override
-  public void failNode(int nodeId) {
-    throw new RuntimeException("Not supported for this Scheduler: " + this.getClass().getName());
-  }
-
-  @Override
-  public void resumeNode(int nodeId) {
-    throw new RuntimeException("Not supported for this Scheduler: " + this.getClass().getName());
-  }
-
-  @Override
-  public void runUntilRound(int i) {
-    throw new RuntimeException("Not supported for this Scheduler: " + this.getClass().getName());
-  }
-
-  @Override
-  public void runForRounds(int numRounds) {
-    throw new RuntimeException("Not supported for this Scheduler: " + this.getClass().getName());
-  }
-
-  @Override
-  public void runToCompletion() {
-    throw new RuntimeException("Not supported for this Scheduler: " + this.getClass().getName());
   }
 
   @Override

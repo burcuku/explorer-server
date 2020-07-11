@@ -33,10 +33,6 @@ public class NodeFailureInjector extends Scheduler {
   //private List<String> ballots = Arrays.asList("33d9f0f0-08c5-11e7-845e-", "33da1800-08c5-11e7-845e-", "33da3f10-08c5-11e7-845e-", "33da6620-08c5-11e7-845e-", "33da8d30-08c5-11e7-845e-");
   private List<String> ballots;
 
-  // used for online control of the schedule by the user
-  boolean suspended;
-  final boolean online;
-
   // for stats:
   int numSuccessfulRounds = 0, numSuccessfulPhases = 0;
 
@@ -61,14 +57,10 @@ public class NodeFailureInjector extends Scheduler {
       log.debug("Using online control of the failing nodes.");
       if(ExplorerConf.getInstance().logResult)
         FileUtils.writeToFile(ExplorerConf.getInstance().resultFile, "Using online control of the failing nodes.", true);
-      online = true;
-      suspended = true;
     } else {
       log.debug("Using failures: " + settings.getFailures() + " seed: " + settings.seed);
       if(ExplorerConf.getInstance().logResult)
         FileUtils.writeToFile(ExplorerConf.getInstance().resultFile, "Seed for failures: " + settings.seed, true);
-      online = false;
-      suspended = false;
     }
   }
 
@@ -81,7 +73,7 @@ public class NodeFailureInjector extends Scheduler {
       //log.debug("Added:  " + message.getBallot());
     }
 
-    if(!suspended) checkForSchedule();
+    checkForSchedule();
   }
 
   @Override
@@ -214,17 +206,9 @@ public class NodeFailureInjector extends Scheduler {
       droppedFromNextRound = 0;
 
       // reset the quorum after each period number of rounds
-      if(!online && numTotalRounds % period == 0)
+      if(numTotalRounds % period == 0)
         failedProcesses.clear();
 
-      //log.debug("Moved to the next round: " + rounds.get(currentRound));
-      // We moved to next round, notify the clients and update failure structures with requested settings
-      if(online && runUntilRound == currentRound) {
-        suspended = true;
-        synchronized (o) {
-          o.notify();
-        }
-      }
     }
   }
 
@@ -257,74 +241,6 @@ public class NodeFailureInjector extends Scheduler {
   }
 
   Object o = new Object(); // used for notification of the client
-
-  public void failNode(int nodeId) {
-    if(nodeId >= conf.NUM_PROCESSES) {
-      log.error("Cannot fail node " + nodeId + ". No such node.");
-    } else {
-      failedProcesses.add(nodeId);
-    }
-  }
-
-  public void resumeNode(int nodeId) {
-    if(nodeId >= conf.NUM_PROCESSES) {
-      log.error("Cannot resume node " + nodeId + ". No such node.");
-    } else {
-      failedProcesses.remove(nodeId);
-    }
-  }
-
-  int runUntilRound = 0;
-
-  public void runUntilRound(int i) {
-    if(currentRound >= i) {
-      log.error("Round " + i + " has already been executed. Is scheduler suspended ? " + suspended);
-      return;
-    }
-    runUntilRound = i;// blocks until the round is reached and the runnable is executed (Failures to inject are set)
-    suspended = false;
-
-    Thread t = new Thread(() -> checkForSchedule());
-    t.start();
-
-    try {
-      synchronized (o) {
-        while(currentRound < i)
-          o.wait();  // blocks until the round is reached and the runnable is executed (Failures to inject are set)
-      }
-    } catch (InterruptedException e) {
-      e.printStackTrace();
-    }
-
-  }
-
-  public void runForRounds(int numRounds) {
-    if(numRounds <= 0) {
-      log.error("Cannot run for " + numRounds + "rounds. Is scheduler suspended ? " + suspended);
-      return;
-    }
-    runUntilRound = currentRound + numRounds;// blocks until the round is reached and the runnable is executed (Failures to inject are set)
-    suspended = false;
-
-    Thread t = new Thread(() -> checkForSchedule());
-    t.start();
-
-    try {
-      synchronized (o) {
-        while(currentRound < runUntilRound) // expected to call by a single test method/thread
-          o.wait();  // blocks until the round is reached and the runnable is executed (Failures to inject are set)
-      }
-    } catch (InterruptedException e) {
-      e.printStackTrace();
-    }
-
-  }
-
-  @Override
-  public synchronized void runToCompletion() {
-    suspended = false;
-    checkForSchedule();
-  }
 
   public String getFailuresAsStr() {
     return ((NodeFailureSettings)settings).getFailures().toString();

@@ -83,8 +83,6 @@ public class SystemRunner {
     }
 
     public static void runAll(ExplorerConf conf, Scheduler scheduler) throws Exception {
-        //CoverageStrategy coverageStrategy = new LastCliquesStrategy();
-        //scheduler.setCoverageStrategy(coverageStrategy);
         Thread timer = setMaxExecutionTimer(ExplorerConf.getInstance().maxExecutionDuration);
 
         Handler handler = new ConnectionHandler(scheduler);

@@ -183,27 +183,6 @@ public class LinkFailureInjector extends Scheduler {
     return scheduled.size() >= 36; // todo parametrize
   }
 
-  public void failNode(int nodeId) {
-    throw new RuntimeException("Not supported for this Scheduler: " + this.getClass().getName());
-  }
-
-  public void resumeNode(int nodeId) {
-    throw new RuntimeException("Not supported for this Scheduler: " + this.getClass().getName());
-  }
-
-  public void runUntilRound(int i) {
-    throw new RuntimeException("Not supported for this Scheduler: " + this.getClass().getName());
-  }
-
-  public void runForRounds(int numRounds) {
-    throw new RuntimeException("Not supported for this Scheduler: " + this.getClass().getName());
-  }
-
-  @Override
-  public synchronized void runToCompletion() {
-    throw new RuntimeException("Not supported for this Scheduler: " + this.getClass().getName());
-  }
-
   @Override
   public String getStats() {
     StringBuffer sb = new StringBuffer();

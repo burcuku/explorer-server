@@ -131,11 +131,6 @@ public abstract class Scheduler {
     return false;
   }
 
-  public void setCoverageStrategy(CoverageStrategy c) {
-    coverageStrategy = c;
-  }
-
-
   private Runnable executionCompletedRunnable = null;
 
   public void setOnExecutionCompleted(Runnable r) {
@@ -155,16 +150,6 @@ public abstract class Scheduler {
     }
     return sb.toString();
   }
-
-  public abstract void failNode(int nodeId);
-
-  public abstract void resumeNode(int nodeId);
-
-  public abstract void runUntilRound(int i);
-
-  public abstract void runForRounds(int numRounds);
-
-  public abstract void runToCompletion();
 
   public abstract String getStats();
 }
